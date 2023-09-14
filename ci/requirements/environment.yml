@@ -1,0 +1,15 @@
+name: geomesher-tests
+channels:
+- conda-forge
+- nodefaults
+dependencies:
+- numpy
+- pandas
+- geopandas
+- gmsh
+- shapely >=2.0
+
+# test deps
+- psutil
+- pytest-cov
+- pytest-xdist

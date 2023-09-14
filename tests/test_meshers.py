@@ -1,9 +1,8 @@
 import geopandas as gpd
 import numpy as np
-import pytest
 import shapely.geometry as sg
 
-import pandamesh as pm
+import geomesher as pm
 
 outer_coords = np.array([(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])
 inner_coords = np.array([(3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)])
@@ -16,19 +15,11 @@ refined = sg.Polygon(inner_coords)
 
 
 def area(vertices, triangles):
-    """
-    Compute the area of every triangle in the mesh.
-    (Helper for these tests.)
-    """
+    """Compute the area of every triangle in the mesh. (Helper for these tests.)."""
     coords = vertices[triangles]
     u = coords[:, 1] - coords[:, 0]
     v = coords[:, 2] - coords[:, 0]
     return 0.5 * np.abs(np.cross(u, v))
-
-
-def triangle_generate(gdf: gpd.GeoDataFrame):
-    mesher = pm.TriangleMesher(gdf)
-    return mesher.generate()
 
 
 def gmsh_generate(gdf: gpd.GeoDataFrame):
@@ -36,27 +27,24 @@ def gmsh_generate(gdf: gpd.GeoDataFrame):
     return mesher.generate()
 
 
-@pytest.mark.parametrize("generate", [triangle_generate, gmsh_generate])
-def test_basic(generate):
+def test_basic():
     polygon = sg.Polygon(outer)
     gdf = gpd.GeoDataFrame(geometry=[polygon])
     gdf["cellsize"] = 1.0
-    vertices, triangles = generate(gdf)
+    vertices, triangles = gmsh_generate(gdf)
     mesh_area = area(vertices, triangles).sum()
     assert np.allclose(mesh_area, polygon.area)
 
 
-@pytest.mark.parametrize("generate", [triangle_generate, gmsh_generate])
-def test_hole(generate):
+def test_hole():
     gdf = gpd.GeoDataFrame(geometry=[donut])
     gdf["cellsize"] = 1.0
-    vertices, triangles = generate(gdf)
+    vertices, triangles = gmsh_generate(gdf)
     mesh_area = area(vertices, triangles).sum()
     assert np.allclose(mesh_area, donut.area)
 
 
-@pytest.mark.parametrize("generate", [triangle_generate, gmsh_generate])
-def test_adjacent_donut(generate):
+def test_adjacent_donut():
     inner_coords2 = inner_coords.copy()
     outer_coords2 = outer_coords.copy()
     inner_coords2[:, 0] += 10.0
@@ -67,7 +55,7 @@ def test_adjacent_donut(generate):
 
     gdf = gpd.GeoDataFrame(geometry=[donut, donut2])
     gdf["cellsize"] = [1.0, 0.5]
-    vertices, triangles = generate(gdf)
+    vertices, triangles = gmsh_generate(gdf)
     mesh_area = area(vertices, triangles).sum()
     assert np.allclose(mesh_area, 2 * donut.area)
 
@@ -80,40 +68,9 @@ def test_adjacent_donut(generate):
     gdf = gpd.GeoDataFrame(geometry=[donut, donut2, line1, line2, *points])
     gdf["cellsize"] = 1.0
 
-    vertices, triangles = generate(gdf)
+    vertices, triangles = gmsh_generate(gdf)
     mesh_area = area(vertices, triangles).sum()
     assert np.allclose(mesh_area, 2 * donut.area)
-
-
-def test_triangle_properties():
-    gdf = gpd.GeoDataFrame(geometry=[donut])
-    gdf["cellsize"] = 1.0
-    mesher = pm.TriangleMesher(gdf)
-
-    # Should be a float >=0, < 34.0
-    with pytest.raises(TypeError):
-        mesher.minimum_angle = 10
-    with pytest.raises(ValueError):
-        mesher.minimum_angle = 35.0
-
-    # Set properties
-    mesher.minimum_angle = 10.0
-    mesher.conforming_delaunay = False
-    mesher.suppress_exact_arithmetic = True
-    mesher.maximum_steiner_points = 10
-    mesher.delaunay_algorithm = pm.DelaunayAlgorithm.SWEEPLINE
-    mesher.consistency_check = True
-
-    # Check whether properties have been set properly
-    assert mesher.minimum_angle == 10.0
-    assert mesher.conforming_delaunay is False
-    assert mesher.suppress_exact_arithmetic is True
-    assert mesher.maximum_steiner_points == 10
-    assert mesher.delaunay_algorithm == pm.DelaunayAlgorithm.SWEEPLINE
-    assert mesher.consistency_check is True
-
-    # Check whether the repr method works
-    assert isinstance(mesher.__repr__(), str)
 
 
 def test_gmsh_properties():

@@ -2,8 +2,8 @@ import geopandas as gpd
 import numpy as np
 import shapely.geometry as sg
 
-from pandamesh import gmsh_geometry as gg
-from pandamesh.gmsh_mesher import gmsh_env
+from geomesher import gmsh_geometry as gg
+from geomesher.gmsh_mesher import gmsh_env
 
 outer_coords = np.array([(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])
 inner_coords = np.array([(3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)])

@@ -1,0 +1,17 @@
+name: geomesher-dev
+channels:
+- conda-forge
+- nodefaults
+dependencies:
+- python>=3.10
+
+- numpy
+- pandas
+- geopandas
+- gmsh
+- shapely >=2.0
+
+# dev deps
+- ipywidgets
+- ipykernel
+

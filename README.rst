@@ -17,17 +17,16 @@ unstructured meshes.
    import pandamesh as pm
 
    # Get some sample data from geopandas.
-   world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+   world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
 
    # Select South America, explode any multi-polygon, and project it to UTM20.
-   south_america = world[world["continent"] == 'South America']
+   south_america = world[world["continent"] == "South America"]
    south_america = south_america.explode().reset_index().to_crs(epsg=32620)
 
    # Set a maximum cell size of 500 km and generate a mesh.
    south_america["cellsize"] = 500_000.0
    mesher = pm.TriangleMesher(south_america)
    vertices, faces = mesher.generate()
-   
 .. image:: https://raw.githubusercontent.com/Deltares/pandamesh/main/docs/_static/pandamesh-demo.png
   :target: https://github.com/deltares/pandamesh
 
@@ -42,7 +41,7 @@ utilizing the respective Python API's, available at:
 
 * https://pypi.org/project/gmsh/
 * https://pypi.org/project/triangle/
-  
+
 For completeness, the source code of both projects can be found at:
 
 * https://gitlab.onelab.info/gmsh/gmsh, under ``api/gmsh.py``
@@ -65,7 +64,7 @@ Installation
 .. code:: console
 
     pip install pandamesh
-    
+
 Documentation
 -------------
 
@@ -73,7 +72,7 @@ Documentation
    :target: https://deltares.github.io/pandamesh/
 
 The documentation can be found `here`_.
-   
+
 Other projects
 --------------
 
@@ -102,7 +101,7 @@ converts the Gmsh mesh files to shapefiles that can be imported into QGIS.
   Multiscale mesh generation on the sphere. Ocean Dynamics, 58(5-6), 461-473.
 * Remacle, J. F., & Lambrechts, J. (2018). Fast and robust mesh generation on
   the sphere—Application to coastal domains. Computer-Aided Design, 103, 14-23.
-  https://doi.org/10.1016/j.cad.2018.03.002  
+  https://doi.org/10.1016/j.cad.2018.03.002
 
 Source: https://github.com/ccorail/qgis-gmsh
 
@@ -117,7 +116,7 @@ discretisation for multi-scale geophysical models.
   geophysical models. Geoscientific Model Development, 11(1), 213-234.
   https://doi.org/10.5194/gmd-11-213-2018
 
-Source: https://github.com/shingleproject/Shingle 
+Source: https://github.com/shingleproject/Shingle
 
 Website: http://shingleproject.org/index_shingle1.0.html
 

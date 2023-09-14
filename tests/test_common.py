@@ -1,19 +1,9 @@
-import textwrap
-from enum import Enum
-
 import geopandas as gpd
 import numpy as np
 import pytest
 import shapely.geometry as sg
 
-from pandamesh import common
-
-
-class Color(Enum):
-    RED = 1
-    GREEN = 2
-    BLUE = 3
-
+from geomesher import common
 
 a = sg.Polygon(
     [
@@ -109,27 +99,6 @@ def test_flatten():
     assert common.flatten([[1], [2, 3]]) == [1, 2, 3]
 
 
-def test_show_options():
-    common._show_options(Color) == textwrap.dedent(
-        """
-        RED
-        GREEN
-        BLUE
-    """
-    )
-
-
-def test_invalid_option():
-    common.invalid_option("YELLOW", Color) == textwrap.dedent(
-        """
-        Invalid option: YELLOW. Valid options are:
-        RED
-        GREEN
-        BLUE
-    """
-    )
-
-
 def test_check_geodataframe():
     with pytest.raises(TypeError, match="Expected GeoDataFrame"):
         common.check_geodataframe([1, 2, 3])
@@ -201,9 +170,7 @@ def test_check_linestrings():
 
     # Ld present in multiple polygons
     linestrings = gpd.GeoSeries(data=[La, Ld], index=[0, 1])
-    with pytest.raises(
-        ValueError, match="The same linestring detected in multiple polygons or"
-    ):
+    with pytest.raises(ValueError, match="The same linestring detected in multiple polygons or"):
         common.check_linestrings(linestrings, polygons)
 
     # Valid input

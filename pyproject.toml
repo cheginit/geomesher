@@ -1,75 +1,207 @@
 [build-system]
-requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=42",
+  "setuptools-scm>=7",
+]
 
 [project]
-name = "pandamesh"
-description = "From geodataframe to mesh"
-license = { text = "MIT" }
+name = "geomesher"
+description = "Remap a geodataframe to a triangulated mesh using gmesh"
 readme = { file = "README.rst", content-type = "text/x-rst" }
-version = "0.1.2"
-maintainers = [{ name = "Huite Bootsma", email = "huite.bootsma@deltares.nl" }]
+keywords = [
+  'geopandas',
+  'mesh',
+  'unstructured grid',
+]
+license = { text = "MIT" }
+maintainers = [{ name = "Taher Chegini", email = "cheginit@gmail.com" }]
 requires-python = ">=3.8"
-dependencies = [
-    'geopandas',  
-    'pooch',
-    'triangle',
-    'shapely >= 2.0',
-]
 classifiers = [
-    'Development Status :: 3 - Alpha',
-    'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: MIT License',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: Implementation :: CPython',
-    'Topic :: Scientific/Engineering',
+  'Development Status :: 3 - Alpha',
+  'Intended Audience :: Science/Research',
+  'License :: OSI Approved :: MIT License',
+  'Operating System :: OS Independent',
+  'Programming Language :: Python',
+  "Programming Language :: Python :: 3 :: Only",
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10',
+  "Programming Language :: Python :: 3.11",
+  'Topic :: Scientific/Engineering',
 ]
-keywords = ['mesh', 'geopandas', 'unstructured grid']
-
-[project.urls]
-Home = "https://github.com/deltares/pandamesh"
-Code = "https://github.com/deltares/pandamesh"
-Issues = "https://github.com/deltares/pandamesh/issues"
-
+dynamic = [
+  "version",
+]
+dependencies = [
+  "geopandas",
+  "gmsh",
+  "numpy",
+  "pandas",
+  "shapely>=2",
+]
 [project.optional-dependencies]
-all = [
-    'geopandas',
-    'gmsh',
-    'pooch',
-    'triangle',
-    'shapely >= 2.0',
-    'matplotlib',
+test = [
+  "coverage[toml]",
+  "pytest-cov",
+  "pytest-xdist[psutil]",
 ]
-# pyproject.toml doesn't quite support re-use like setup.cfg did:
-# https://github.com/pypa/setuptools/issues/3221
-docs = [
-    'geopandas',
-    'gmsh',
-    'pooch',
-    'triangle',
-    'shapely >= 2.0',
-    'matplotlib',
-    'pydata-sphinx-theme',
-    'sphinx',
-    'sphinx-gallery',
-]
+[project.urls]
+Code = "https://github.com/deltares/geomesher"
+Home = "https://github.com/deltares/geomesher"
+Issues = "https://github.com/deltares/geomesher/issues"
 
 [tool.setuptools]
-packages = [
-    "pandamesh",
-    "pandamesh.data",
-]
+include-package-data = true
 license-files = ["LICENSE"]
+platforms = ["any"]
+zip-safe = false
+
+[tool.setuptools.package-data]
+geomesher = ["py.typed"]
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+
+[tool.setuptools_scm]
+fallback_version = "999"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+target-version = 'py38'
+select = [
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "D",  # pydocstyle
+    "E",  # Error
+    "F",  # pyflakes
+    "I",  # isort
+    "ISC", # flake8-implicit-str-concat
+    "N",  # pep8-naming
+    "PGH",  # pygrep-hooks
+    "PTH", # flake8-use-pathlib
+    "Q",  # flake8-quotes
+    "S",  # bandit
+    "SIM",  # flake8-simplify
+    "TRY",  # tryceratops
+    "UP",  # pyupgrade
+    "W",  # Warning
+    "YTT", # flake8-2020
+]
+
+exclude = [
+    "__pycache__",
+    ".nox",
+]
+
+ignore = [
+    "D103",
+    "D105",
+    "E501",
+    "TRY003",
+]
+line-length = 100
+
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = [
+    "chr",
+    "typer.Argument",
+    "typer.Option",
+]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.per-file-ignores]
+"tests/*.py" = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "S101",  # use of "assert"
+    "S102",  # use of "exec"
+    "S106",  # possible hardcoded password.
+    "PGH001",  # use of "eval"
+]
+
+[tool.ruff.isort]
+known-first-party = [
+  "geomesher",
+]
 
 [tool.isort]
+default_section = "THIRDPARTY"
+force_grid_wrap = 0
+include_trailing_comma = true
+known_first_party = "geomesher"
+line_length = 100
+multi_line_output = 3
 profile = "black"
+use_parentheses = true
+
+[tool.pytest.ini_options]
+addopts = "--ignore=noxfile.py -n=auto -v --cov=geomesher --cov-report xml --durations=5"
+doctest_optionflags = 'NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER'
+filterwarnings = [
+  "ignore:.*distutils.*",
+  "ignore:.*--rsyncdir command line argument.*",
+  "ignore:.*numpy.ndarray size changed.*",
+  "ignore:.*invalid value encountered in cast.*",
+  "ignore:.*'cgi' is deprecated.*",
+]
+testpaths = [
+  "tests",
+  "geomesher"
+]
 
 [tool.coverage.report]
 exclude_lines = [
-  "pragma: no cover",
+  'raise ServiceUnavailableError',
+  "if TYPE_CHECKING:"
 ]
+ignore_errors = true
+
+[tool.coverage.run]
+branch = true
+omit = [
+  "**/__init__.py",
+  "**/print_versions.py"
+]
+parallel = true
+source = ['geomesher']
+
+[tool.codespell]
+skip = "__pycache__,_build,.mypy_cache,.git,./htmlcov,.nox"
+
+[tool.pycln]
+all = true
+expand_stars = true
+no_gitignore = false
+verbose = true
+
+[tool.pyright]
+exclude = [
+  ".nox/",
+  "**/__pycache__",
+  "**/__init__.py",
+  "tests/"
+]
+include = ["geomesher"]
+reportMissingTypeStubs = false
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnnecessaryIsInstance = false
+typeCheckingMode = "strict"
+
+[tool.refurb]
+python_version = "3.8"
+quiet = true
