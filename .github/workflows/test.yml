@@ -55,7 +55,7 @@ jobs:
     - name: Version info
       run: |-
         NAME="$(echo ${REPO_NAME} | tr - _)"
-        python -c "import ${NAME}; ${NAME}.show_versions()"
+        python -c "import ${NAME}; print(${NAME}.__version__)"
     - name: Run pytest
       run: |-
         pytest

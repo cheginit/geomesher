@@ -9,6 +9,7 @@ dependencies:
 - pandas
 - geopandas
 - gmsh
+- python-gmsh
 - shapely >=2.0
 
 # dev deps
