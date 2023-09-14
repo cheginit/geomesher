@@ -6,7 +6,7 @@ import pathlib
 import tempfile
 from contextlib import contextmanager
 from enum import Enum, IntEnum
-from typing import Literal
+from typing import Generator, Literal
 
 import geopandas as gpd
 import gmsh
@@ -16,9 +16,9 @@ import shapely
 
 from geomesher.common import (
     FloatArray,
+    InputValueError,
     IntArray,
     check_geodataframe,
-    InputValueError,
     repr,
     separate,
 )
@@ -39,8 +39,9 @@ __all__ = [
     "gdf_mesher",
 ]
 
+
 @contextmanager
-def gmsh_env():
+def gmsh_env() -> Generator[None, None, None]:
     if gmsh.isInitialized():
         gmsh.finalize()
 
@@ -157,7 +158,7 @@ class GmshMesher:
     """
 
     @staticmethod
-    def _initialize_gmsh():
+    def _initialize_gmsh() -> None:
         if gmsh.isInitialized():
             gmsh.finalize()
 
@@ -192,7 +193,7 @@ class GmshMesher:
         self._subdivision_algorithm = "NONE"
 
     @staticmethod
-    def finalize_gmsh():
+    def finalize_gmsh() -> None:
         """Finalize Gmsh."""
         gmsh.finalize()
 
@@ -200,13 +201,17 @@ class GmshMesher:
     # ----------
 
     @property
-    def mesh_algorithm(self)-> Literal['MESH_ADAPT',
- 'AUTOMATIC',
- 'INITIAL_MESH_ONLY',
- 'FRONTAL_DELAUNAY',
- 'BAMG',
- 'FRONTAL_DELAUNAY_FOR_QUADS',
- 'PACKING_OF_PARALLELLOGRAMS']:
+    def mesh_algorithm(
+        self,
+    ) -> Literal[
+        "MESH_ADAPT",
+        "AUTOMATIC",
+        "INITIAL_MESH_ONLY",
+        "FRONTAL_DELAUNAY",
+        "BAMG",
+        "FRONTAL_DELAUNAY_FOR_QUADS",
+        "PACKING_OF_PARALLELLOGRAMS",
+    ]:
         """Can be set to one of :py:class:`geomesher.MeshAlgorithm`.
 
         .. code::
@@ -224,20 +229,25 @@ class GmshMesher:
         return self._mesh_algorithm
 
     @mesh_algorithm.setter
-    def mesh_algorithm(self, value: Literal['MESH_ADAPT',
- 'AUTOMATIC',
- 'INITIAL_MESH_ONLY',
- 'FRONTAL_DELAUNAY',
- 'BAMG',
- 'FRONTAL_DELAUNAY_FOR_QUADS',
- 'PACKING_OF_PARALLELLOGRAMS'])-> None:
+    def mesh_algorithm(
+        self,
+        value: Literal[
+            "MESH_ADAPT",
+            "AUTOMATIC",
+            "INITIAL_MESH_ONLY",
+            "FRONTAL_DELAUNAY",
+            "BAMG",
+            "FRONTAL_DELAUNAY_FOR_QUADS",
+            "PACKING_OF_PARALLELLOGRAMS",
+        ],
+    ) -> None:
         if value not in MeshAlgorithm._member_names_:
             raise InputValueError("mesh_algorithm", MeshAlgorithm._member_names_)
         self._mesh_algorithm = value
         gmsh.option.setNumber("Mesh.Algorithm", MeshAlgorithm[value].value)
 
     @property
-    def recombine_all(self):
+    def recombine_all(self) -> bool:
         """Apply recombination algorithm to all surfaces, ignoring per-surface spec."""
         return self._recombine_all
 
@@ -260,31 +270,31 @@ class GmshMesher:
         self._force_geometry = value
 
     @property
-    def mesh_size_extend_from_boundary(self):
+    def mesh_size_extend_from_boundary(self) -> bool:
         """Forces the mesh size to be extended from the boundary, or not per surface."""
         return self._mesh_size_extend_from_boundary
 
     @mesh_size_extend_from_boundary.setter
-    def mesh_size_extend_from_boundary(self, value: bool):
+    def mesh_size_extend_from_boundary(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise TypeError("mesh_size_extend_from_boundary must be a bool")
         self._mesh_size_extend_from_boundary = value
         gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", value)
 
     @property
-    def mesh_size_from_points(self):
+    def mesh_size_from_points(self) -> bool:
         """Compute mesh element sizes from values given at geometry points."""
         return self._mesh_size_from_points
 
     @mesh_size_from_points.setter
-    def mesh_size_from_points(self, value: bool):
+    def mesh_size_from_points(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise TypeError("mesh_size_from_points must be a bool")
         self._mesh_size_from_points = value
         gmsh.option.setNumber("Mesh.MeshSizeFromPoints", value)
 
     @property
-    def mesh_size_from_curvature(self):
+    def mesh_size_from_curvature(self) -> bool:
         """Automatically compute mesh element sizes from curvature.
 
         It uses the value as the target number of elements per 2 * Pi radians.
@@ -292,7 +302,7 @@ class GmshMesher:
         return self._mesh_size_from_curvature
 
     @mesh_size_from_curvature.setter
-    def mesh_size_from_curvature(self, value: bool):
+    def mesh_size_from_curvature(self, value: bool) -> None:
         """Automatically compute mesh element sizes from curvature.
 
         It uses the value as the target number of elements per 2 * Pi radians.
@@ -303,7 +313,7 @@ class GmshMesher:
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", value)
 
     @property
-    def field_combination(self)->Literal["MIN", "MAX", "MEAN"]:
+    def field_combination(self) -> Literal["MIN", "MAX", "MEAN"]:
         """Control how cell size fields are combined.
 
         When they are found at the same location. Can be set to one of
@@ -319,13 +329,13 @@ class GmshMesher:
         return self._field_combination
 
     @field_combination.setter
-    def field_combination(self, value: Literal["MIN", "MAX", "MEAN"])-> None:
+    def field_combination(self, value: Literal["MIN", "MAX", "MEAN"]) -> None:
         if value not in FieldCombination._member_names_:
             raise InputValueError("field_combination", FieldCombination._member_names_)
         self._field_combination = value
 
     @property
-    def subdivision_algorithm(self)-> Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]:
+    def subdivision_algorithm(self) -> Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]:
         """Subdivision algorithm.
 
         All meshes can be subdivided to generate fully quadrangular cells. Can
@@ -341,7 +351,9 @@ class GmshMesher:
         return self._subdivision_algorithm
 
     @subdivision_algorithm.setter
-    def subdivision_algorithm(self, value: Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"])->None:
+    def subdivision_algorithm(
+        self, value: Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]
+    ) -> None:
         if value not in SubdivisionAlgorithm._member_names_:
             raise InputValueError("subdivision_algorithm", SubdivisionAlgorithm._member_names_)
         self._subdivision_algorithm = value
@@ -466,13 +478,12 @@ class GmshMesher:
         )
         self._fields_list.append(field_id)
 
-    def _vertices(self):
+    def _vertices(self) -> FloatArray:
         # getNodes returns: node_tags, coord, parametric_coord
         _, vertices, _ = gmsh.model.mesh.getNodes()
-        # Return x and y
         return vertices.reshape((-1, 3))[:, :2]
 
-    def _faces(self):
+    def _faces(self) -> IntArray:
         element_types, _, node_tags = gmsh.model.mesh.getElements()
         tags = dict(zip(element_types, node_tags))
         _triangle = 2
@@ -538,12 +549,12 @@ class GmshMesher:
         return repr(self)
 
 
-def gdf_mesher(gdf: gpd.GeoDataFrame)-> gpd.GeoSeries:
+def gdf_mesher(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
     """Generate a mesh from a geodataframe.
 
     This function uses defaults Gmsh parameters. For more control, use
     :py:class:`geomesher.GmshMesher`.
-    
+
     Parameters
     ----------
     gdf: geopandas.GeoDataFrame
@@ -555,7 +566,7 @@ def gdf_mesher(gdf: gpd.GeoDataFrame)-> gpd.GeoSeries:
     -------
     mesh: geopandas.GeoSeries
         The mesh as a geopandas.GeoSeries.
-    
+
     Notes
     -----
     Linestrings and points may also be included. The segments of linestrings

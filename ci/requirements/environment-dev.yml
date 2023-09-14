@@ -14,4 +14,3 @@ dependencies:
 # dev deps
 - ipywidgets
 - ipykernel
-

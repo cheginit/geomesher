@@ -69,6 +69,37 @@ fallback_version = "999"
 [tool.black]
 line-length = 100
 
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = [
+    "chr",
+    "typer.Argument",
+    "typer.Option",
+]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.per-file-ignores]
+"tests/*.py" = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "S101",  # use of "assert"
+    "S102",  # use of "exec"
+    "S106",  # possible hardcoded password.
+    "PGH001",  # use of "eval"
+]
+
+[tool.ruff.isort]
+known-first-party = [
+  "geomesher",
+]
+
 [tool.ruff]
 target-version = 'py38'
 select = [
@@ -103,38 +134,6 @@ ignore = [
     "TRY003",
 ]
 line-length = 100
-
-[tool.ruff.flake8-bugbear]
-extend-immutable-calls = [
-    "chr",
-    "typer.Argument",
-    "typer.Option",
-]
-
-[tool.ruff.pydocstyle]
-convention = "numpy"
-
-[tool.ruff.per-file-ignores]
-"tests/*.py" = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-    "S101",  # use of "assert"
-    "S102",  # use of "exec"
-    "S106",  # possible hardcoded password.
-    "PGH001",  # use of "eval"
-]
-
-[tool.ruff.isort]
-known-first-party = [
-  "geomesher",
-]
-
 [tool.isort]
 default_section = "THIRDPARTY"
 force_grid_wrap = 0
@@ -175,6 +174,11 @@ omit = [
 ]
 parallel = true
 source = ['geomesher']
+
+[tool.fixit]
+disable = [
+    "fixit.rules:NoStringTypeAnnotation",  # single lint rule by name
+]
 
 [tool.codespell]
 skip = "__pycache__,_build,.mypy_cache,.git,./htmlcov,.nox"

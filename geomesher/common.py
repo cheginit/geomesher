@@ -4,13 +4,12 @@ from __future__ import annotations
 import functools
 import operator
 from itertools import combinations
-from typing import Any, Sequence, cast, Generator
+from typing import Any, Generator, Sequence, cast
 
 import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 from pandas.api.types import is_integer_dtype
-
 
 IntArray = npt.NDArray[np.int64]
 FloatArray = npt.NDArray[np.float64]
@@ -32,6 +31,7 @@ def repr(obj: Any) -> str:
 
 def flatten(seq: Sequence[Any]):
     return functools.reduce(operator.concat, seq)
+
 
 class InputValueError(Exception):
     """Exception raised for invalid input.

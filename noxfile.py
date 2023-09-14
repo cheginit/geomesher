@@ -42,9 +42,7 @@ nox.options.sessions = (
 )
 
 
-def install_deps(
-    session: nox.Session, extra: str | None = None
-) -> None:
+def install_deps(session: nox.Session, extra: str | None = None) -> None:
     """Install package dependencies."""
     deps = [f".[{extra}]"] if extra else ["."]
     session.install(*deps)
@@ -132,4 +130,3 @@ def tests(session: nox.Session) -> None:
     session.run("pytest", "--doctest-modules", *session.posargs)
     session.run("coverage", "report")
     session.run("coverage", "html")
-
