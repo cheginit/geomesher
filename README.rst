@@ -13,8 +13,8 @@ GeoMesher
     :target: https://anaconda.org/conda-forge/geomesher
     :alt: Conda Version
 
-.. image:: https://codecov.io/gh/hyriver/geomesher/graph/badge.svg
-    :target: https://codecov.io/gh/hyriver/geomesher
+.. image:: https://codecov.io/gh/cheginit/geomesher/graph/badge.svg
+    :target: https://codecov.io/gh/cheginit/geomesher
     :alt: CodeCov
 
 .. image:: https://img.shields.io/pypi/pyversions/geomesher.svg
@@ -27,8 +27,8 @@ GeoMesher
     :target: https://pepy.tech/project/geomesher
     :alt: Downloads
 
-.. image:: https://www.codefactor.io/repository/github/hyriver/geomesher/badge/main
-    :target: https://www.codefactor.io/repository/github/hyriver/geomesher/overview/main
+.. image:: https://www.codefactor.io/repository/github/cheginit/geomesher/badge/main
+    :target: https://www.codefactor.io/repository/github/cheginit/geomesher/overview/main
     :alt: CodeFactor
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -38,10 +38,6 @@ GeoMesher
 .. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
     :target: https://github.com/pre-commit/pre-commit
     :alt: pre-commit
-
-.. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/hyriver/HyRiver-examples/main?urlpath=lab/tree/notebooks
-    :alt: Binder
 
 |
 
@@ -120,7 +116,7 @@ Contributing
 ------------
 
 Contributions are very welcomed. Please read
-`CONTRIBUTING.rst <https://github.com/hyriver/pygeoogc/blob/main/CONTRIBUTING.rst>`__
+`CONTRIBUTING.rst <https://github.com/cheginit/pygeoogc/blob/main/CONTRIBUTING.rst>`__
 file for instructions.
 
 Credits
