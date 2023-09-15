@@ -1,130 +1,131 @@
-pandamesh
+GeoMesher
 =========
 
-.. image:: https://img.shields.io/github/actions/workflow/status/deltares/pandamesh/ci.yml?style=flat-square
-   :target: https://github.com/deltares/pandamesh/actions?query=workflows%3Aci
-.. image:: https://img.shields.io/codecov/c/github/deltares/pandamesh.svg?style=flat-square
-   :target: https://app.codecov.io/gh/deltares/pandamesh
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square
-   :target: https://github.com/psf/black
+.. image:: https://github.com/cheginit/geomesher/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/cheginit/geomesher/actions/workflows/test.yml
+   :alt: CI
 
-This package translates geospatial vector data (points, lines, or polygons) to
-unstructured meshes.
+.. image:: https://img.shields.io/pypi/v/geomesher.svg
+    :target: https://pypi.python.org/pypi/geomesher
+    :alt: PyPi
 
-.. code:: python
+.. image:: https://img.shields.io/conda/vn/conda-forge/geomesher.svg
+    :target: https://anaconda.org/conda-forge/geomesher
+    :alt: Conda Version
 
-   import geopandas as gpd
-   import pandamesh as pm
+.. image:: https://codecov.io/gh/hyriver/geomesher/graph/badge.svg
+    :target: https://codecov.io/gh/hyriver/geomesher
+    :alt: CodeCov
 
-   # Get some sample data from geopandas.
-   world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+.. image:: https://img.shields.io/pypi/pyversions/geomesher.svg
+    :target: https://pypi.python.org/pypi/geomesher
+    :alt: Python Versions
 
-   # Select South America, explode any multi-polygon, and project it to UTM20.
-   south_america = world[world["continent"] == "South America"]
-   south_america = south_america.explode().reset_index().to_crs(epsg=32620)
+|
 
-   # Set a maximum cell size of 500 km and generate a mesh.
-   south_america["cellsize"] = 500_000.0
-   mesher = pm.TriangleMesher(south_america)
-   vertices, faces = mesher.generate()
-.. image:: https://raw.githubusercontent.com/Deltares/pandamesh/main/docs/_static/pandamesh-demo.png
-  :target: https://github.com/deltares/pandamesh
+.. image:: https://static.pepy.tech/badge/geomesher
+    :target: https://pepy.tech/project/geomesher
+    :alt: Downloads
 
-The package converts geospatial data, presented as
-`geopandas`_ `GeoDataFrames`_, to unstructured meshes using the open source
-high quality mesh generators:
+.. image:: https://www.codefactor.io/repository/github/hyriver/geomesher/badge/main
+    :target: https://www.codefactor.io/repository/github/hyriver/geomesher/overview/main
+    :alt: CodeFactor
 
-* Christophe Geuzaine and Jean-François Remacle's `Gmsh`_
-* Jonathan Shewchuk's `Triangle`_
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+    :alt: black
 
-utilizing the respective Python API's, available at:
+.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
+    :target: https://github.com/pre-commit/pre-commit
+    :alt: pre-commit
 
-* https://pypi.org/project/gmsh/
-* https://pypi.org/project/triangle/
+.. image:: https://mybinder.org/badge_logo.svg
+    :target: https://mybinder.org/v2/gh/hyriver/HyRiver-examples/main?urlpath=lab/tree/notebooks
+    :alt: Binder
 
-For completeness, the source code of both projects can be found at:
+|
 
-* https://gitlab.onelab.info/gmsh/gmsh, under ``api/gmsh.py``
-* https://github.com/drufat/triangle
+Features
+--------
 
-These APIs are wrapped in two lightweight classes: ``pandamesh.TriangleMesher``
-and ``pandamesh.GmshMesher``. Both are initialized with a GeoDataFrame defining
-the geometry features of the mesh. During initialization, geometries are
-checked for overlaps and intersections, as the mesh generators cannot deal with
-these.  Generated meshes are returned as two numpy arrays: the coordinates of
-the vertices, and the connectivity of the mesh faces to these vertices (as is
-`usual`_ for many unstructured grid representations).
+GeoMesher is a fork of `pandamesh <https://github.com/Deltares/pandamesh>`__. The original
+package included two mesh generators: `Triangle <https://www.cs.cmu.edu/~quake/triangle.html>`__
+and `Gmsh <https://gmsh.info/>`__. This fork only includes the Gmsh mesh generator since
+Triangle seems to be not maintained anymore. Also, GeoMesher adds three new functionalities:
 
-GeoPandas is not suited for geometries that "wrap around" the world.
-Consequently, this package cannot generate meshes for e.g. a sphere.
+* A new method for returning the generated mesh as a GeoDataFrame.
+* A new function called ``gdf_mesher`` that can generate a mesh from a GeoDataFrame
+  with a single function call and with sane defaults for the mesh generator.
+* Remap a scalar field from the source GeoDataFrame to the generated mesh,
+  using an area weighted interpolation method
+  (based on `Tobler <https://github.com/pysal/tobler>`__).
+
+Note that the remapping functionality of GeoMesher is a simple areal interpolation method.
+For more advanced interpolation methods, please use `Tobler <https://pysal.org/tobler/index.html>`__.
 
 Installation
 ------------
 
-.. code:: console
+You can install GeoMesher using ``pip`` or ``conda`` (``mamba``):
 
-    pip install pandamesh
+.. code-block:: console
 
-Documentation
--------------
+    $ pip install geomesher
 
-.. image:: https://img.shields.io/github/actions/workflow/status/deltares/pandamesh/docs.yml?style=flat-square
-   :target: https://deltares.github.io/pandamesh/
 
-The documentation can be found `here`_.
+.. code-block:: console
 
-Other projects
---------------
+    $ conda install -c conda-forge geomesher
 
-Pandamesh has been developed because none of the existing packages provide a
-straightforward scripting based approach to converting 2D vector geometries to
-2D unstructured grids.
+Quick start
+-----------
 
-Examples of other packages which work with unstructured meshes are listed below.
+The following example shows how to generate a mesh from a GeoDataFrame
+using both the ``gdf_mesher`` function and the ``GmshMesher`` class.
 
-See also `this list`_ for many other mesh generation tools.
+We start by getting a GeoDataFrame of South America from the Natural Earth website.
+Then, we reproject it to a projected coordinate system (UTM zone 20S).
+Finally, we add a new column called ``cellsize`` that will be used to set the
+maximum size of the mesh elements.
 
-pygmsh
-******
+We use the ``gdf_mesher`` function to generate the mesh with default parameters
+and use ``GmshMesher`` to generate the mesh with ``MESH_ADAPT`` algorithm.
+We also use the ``area_interpolate`` function to remap the ``POP_EST`` column
+from the source GeoDataFrame to the generated mesh.
 
-The `pygmsh Python package`_  provides useful abstractions from Gmsh's own
-Python interface so you can create complex geometries more easily. It also
-provides tools for 3D operations (e.g. extrusions).
+.. code:: python
 
-qgis-gsmh
-*********
+    import geopandas as gpd
+    import geomesher as gm
 
-qgis-gmsh generates geometry input files for the GMSH mesh generator and
-converts the Gmsh mesh files to shapefiles that can be imported into QGIS.
+    world = gpd.read_file(
+        "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip"
+    )
 
-* Lambrechts, J., Comblen, R., Legat, V., Geuzaine, C., & Remacle, J. F. (2008).
-  Multiscale mesh generation on the sphere. Ocean Dynamics, 58(5-6), 461-473.
-* Remacle, J. F., & Lambrechts, J. (2018). Fast and robust mesh generation on
-  the sphere—Application to coastal domains. Computer-Aided Design, 103, 14-23.
-  https://doi.org/10.1016/j.cad.2018.03.002
+    south_america = world[world["CONTINENT"] == "South America"]
+    south_america = south_america.explode(ignore_index=True).to_crs(32620)
+    south_america["cellsize"] = 500_000.0
 
-Source: https://github.com/ccorail/qgis-gmsh
+    mesh_auto = gm.gdf_mesher(south_america, intensive_variables=["POP_EST"])
 
-Shingle
-*******
+    mesher = gm.GmshMesher(south_america)
+    mesher.mesh_algorithm = "MESH_ADAPT"
+    mesh_adapt = mesher.generate_gdf()
+    mesh_adapt = gm.area_interpolate(south_america, mesh_adapt, intensive_variables=["POP_EST"])
 
-Shingle provides generalised self-consistent and automated domain
-discretisation for multi-scale geophysical models.
+.. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/docs/_static/demo.png
+  :target: https://github.com/cheginit/geomesher
 
-* Candy, A. S., & Pietrzak, J. D. (2018). Shingle 2.0: generalising
-  self-consistent and automated domain discretisation for multi-scale
-  geophysical models. Geoscientific Model Development, 11(1), 213-234.
-  https://doi.org/10.5194/gmd-11-213-2018
+Contributing
+------------
 
-Source: https://github.com/shingleproject/Shingle
+Contributions are very welcomed. Please read
+`CONTRIBUTING.rst <https://github.com/hyriver/pygeoogc/blob/main/CONTRIBUTING.rst>`__
+file for instructions.
 
-Website: http://shingleproject.org/index_shingle1.0.html
+Credits
+-------
 
-.. _here: https://deltares.github.io/pandamesh/
-.. _geopandas: https://geopandas.org/
-.. _GeoDataFrames: https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.html
-.. _Gmsh: https://gmsh.info/
-.. _Triangle: https://www.cs.cmu.edu/~quake/triangle.html
-.. _usual: https://ugrid-conventions.github.io/ugrid-conventions/
-.. _pygmsh Python package: https://github.com/nschloe/pygmsh
-.. _this list: https://github.com/nschloe/awesome-scientific-computing#meshing
+GeoMesher is a fork of `pandamesh <https://github.com/Deltares/pandamesh>`__ (MIT License)
+and uses one of the modules in
+`Tobler <https://pysal.org/tobler/index.html>`__ (BSD-3-Clause License).
