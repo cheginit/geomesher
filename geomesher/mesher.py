@@ -6,7 +6,7 @@ import pathlib
 import tempfile
 from contextlib import contextmanager
 from enum import Enum, IntEnum
-from typing import Generator, Literal, cast
+from typing import Any, Generator, Literal, cast
 
 import geopandas as gpd
 import gmsh
@@ -23,19 +23,31 @@ from geomesher.common import (
     separate,
 )
 from geomesher.exceptions import InputValueError
-from geomesher.gmsh_fields import (
+from geomesher.fields import (
     FIELDS,
     add_distance_field,
     add_structured_field,
     validate_field,
 )
-from geomesher.gmsh_geometry import add_field_geometry, add_geometry
+from geomesher.geometry import add_field_geometry, add_geometry
 
 __all__ = [
-    "GmshMesher",
+    "Mesher",
     "gmsh_env",
     "gdf_mesher",
 ]
+
+Algorithms = Literal[
+    "MESH_ADAPT",
+    "AUTOMATIC",
+    "INITIAL_MESH_ONLY",
+    "FRONTAL_DELAUNAY",
+    "BAMG",
+    "FRONTAL_DELAUNAY_FOR_QUADS",
+    "PACKING_OF_PARALLELLOGRAMS",
+]
+Combinations = Literal["MIN", "MAX", "MEAN"]
+Subdivisions = Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]
 
 
 @contextmanager
@@ -110,7 +122,7 @@ class FieldCombination(Enum):
     MEAN = "Mean"
 
 
-def coerce_field(field: dict[str, str] | str) -> dict[str, str]:
+def _to_dict(field: dict[str, Any] | str) -> dict[str, Any]:
     if not isinstance(field, (dict, str)):
         raise TypeError("field must be a dictionary or a valid JSON dictionary string")
     if isinstance(field, str):
@@ -118,7 +130,7 @@ def coerce_field(field: dict[str, str] | str) -> dict[str, str]:
     return field
 
 
-class GmshMesher:
+class Mesher:
     """Wrapper for the python bindings to Gmsh.
 
     This class must be initialized
@@ -181,14 +193,14 @@ class GmshMesher:
         self._tmpdir = tempfile.TemporaryDirectory()
 
         # Set default values for meshing parameters
-        self._mesh_algorithm = "AUTOMATIC"
+        self._mesh_algorithm: Algorithms = "AUTOMATIC"
         self.recombine_all = False
         self.force_geometry = True
         self.mesh_size_extend_from_boundary = True
         self.mesh_size_from_points = True
         self.mesh_size_from_curvature = False
-        self._field_combination = "MIN"
-        self._subdivision_algorithm = "NONE"
+        self._field_combination: Combinations = "MIN"
+        self._subdivision_algorithm: Subdivisions = "NONE"
 
     @staticmethod
     def finalize_gmsh() -> None:
@@ -201,43 +213,58 @@ class GmshMesher:
     @property
     def mesh_algorithm(
         self,
-    ) -> Literal[
-        "MESH_ADAPT",
-        "AUTOMATIC",
-        "INITIAL_MESH_ONLY",
-        "FRONTAL_DELAUNAY",
-        "BAMG",
-        "FRONTAL_DELAUNAY_FOR_QUADS",
-        "PACKING_OF_PARALLELLOGRAMS",
-    ]:
-        """Can be set to one of :py:class:`geomesher.MeshAlgorithm`.
+    ) -> Algorithms:
+        """Can be set to one of :class:`geomesher.MeshAlgorithm`.
 
-        .. code::
+        Available algorithms are:
 
-            MESH_ADAPT = 1
-            AUTOMATIC = 2
-            INITIAL_MESH_ONLY = 3
-            FRONTAL_DELAUNAY = 5
-            BAMG = 7
-            FRONTAL_DELAUNAY_FOR_QUADS = 8
-            PACKING_OF_PARALLELLOGRAMS = 9
+        * ``MESH_ADAPT``
+        * ``AUTOMATIC``
+        * ``INITIAL_MESH_ONLY``
+        * ``FRONTAL_DELAUNAY``
+        * ``BAMG``
+        * ``FRONTAL_DELAUNAY_FOR_QUADS``
+        * ``PACKING_OF_PARALLELLOGRAMS``
 
+        Notes
+        -----
         Each algorithm has its own advantages and disadvantages.
+
+        For all 2D unstructured algorithms a Delaunay mesh that contains all
+        the points of the 1D mesh is initially constructed using a
+        divide-and-conquer algorithm. Missing edges are recovered using edge
+        swaps. After this initial step several algorithms can be applied to
+        generate the final mesh:
+
+        * The MeshAdapt algorithm is based on local mesh modifications. This
+        technique makes use of edge swaps, splits, and collapses: long edges
+        are split, short edges are collapsed, and edges are swapped if a
+        better geometrical configuration is obtained.
+        * The Delaunay algorithm is inspired by the work of the GAMMA team at
+        INRIA. New points are inserted sequentially at the circumcenter of
+        the element that has the largest adimensional circumradius. The mesh
+        is then reconnected using an anisotropic Delaunay criterion.
+        * The Frontal-Delaunay algorithm is inspired by the work of S. Rebay.
+        * Other experimental algorithms with specific features are also
+        available. In particular, Frontal-Delaunay for Quads is a variant of
+        the Frontal-Delaunay algorithm aiming at generating right-angle
+        triangles suitable for recombination; and BAMG allows to generate
+        anisotropic triangulations.
+
+        For very complex curved surfaces the MeshAdapt algorithm is the most robust.
+        When high element quality is important, the Frontal-Delaunay algorithm should
+        be tried. For very large meshes of plane surfaces the Delaunay algorithm is
+        the fastest; it usually also handles complex mesh size fields better than the
+        Frontal-Delaunay. When the Delaunay or Frontal-Delaunay algorithms fail,
+        MeshAdapt is automatically triggered. The Automatic algorithm uses
+        Delaunay for plane surfaces and MeshAdapt for all other surfaces.
         """
         return self._mesh_algorithm
 
     @mesh_algorithm.setter
     def mesh_algorithm(
         self,
-        value: Literal[
-            "MESH_ADAPT",
-            "AUTOMATIC",
-            "INITIAL_MESH_ONLY",
-            "FRONTAL_DELAUNAY",
-            "BAMG",
-            "FRONTAL_DELAUNAY_FOR_QUADS",
-            "PACKING_OF_PARALLELLOGRAMS",
-        ],
+        value: Algorithms,
     ) -> None:
         if value not in MeshAlgorithm._member_names_:
             raise InputValueError("mesh_algorithm", MeshAlgorithm._member_names_)
@@ -311,60 +338,50 @@ class GmshMesher:
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", value)
 
     @property
-    def field_combination(self) -> Literal["MIN", "MAX", "MEAN"]:
+    def field_combination(self) -> Combinations:
         """Control how cell size fields are combined.
 
-        When they are found at the same location. Can be set to one of
-        :py:class:`geomesher.FieldCombination`:
+        When they are found at the same location. Accepted values are:
 
-        .. code::
-
-            MIN = "Min"
-            MAX = "Max"
-            MEAN = "Mean"
+        - ``MIN``
+        - ``MAX``
+        - ``MEAN``
 
         """
         return self._field_combination
 
     @field_combination.setter
-    def field_combination(self, value: Literal["MIN", "MAX", "MEAN"]) -> None:
+    def field_combination(self, value: Combinations) -> None:
         if value not in FieldCombination._member_names_:
             raise InputValueError("field_combination", FieldCombination._member_names_)
         self._field_combination = value
 
     @property
-    def subdivision_algorithm(self) -> Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]:
+    def subdivision_algorithm(self) -> Subdivisions:
         """Subdivision algorithm.
 
-        All meshes can be subdivided to generate fully quadrangular cells. Can
-        be set to one of :py:class:`geomesher.SubdivisionAlgorithm`:
+        All meshes can be subdivided to generate fully quadrangular cells.
+        Available algorithms are:
 
-        .. code::
-
-            NONE = 0
-            ALL_QUADRANGLES = 1
-            BARYCENTRIC = 3
+        - ``NONE``
+        - ``ALL_QUADRANGLES``
+        - ``BARYCENTRIC``
 
         """
         return self._subdivision_algorithm
 
     @subdivision_algorithm.setter
-    def subdivision_algorithm(
-        self, value: Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]
-    ) -> None:
+    def subdivision_algorithm(self, value: Subdivisions) -> None:
         if value not in SubdivisionAlgorithm._member_names_:
             raise InputValueError("subdivision_algorithm", SubdivisionAlgorithm._member_names_)
         self._subdivision_algorithm = value
         gmsh.option.setNumber("Mesh.SubdivisionAlgorithm", SubdivisionAlgorithm[value].value)
 
-    # Methods
-    # -------
     def _new_field_id(self) -> int:
         self._current_field_id += 1
         return self._current_field_id
 
     def _combine_fields(self) -> None:
-        # Create a combination field
         if self.fields is None:
             return
         field_id = self._new_field_id()
@@ -397,16 +414,14 @@ class GmshMesher:
         if "field" not in gdf.columns:
             raise ValueError("field column is missing from geodataframe")
 
-        # Explode just in case to get rid of multi-elements
-        # gdf = gdf.explode()
-
         for field, field_gdf in gdf.groupby("field"):
             distance_id = self._new_field_id()
             field_id = self._new_field_id()
-            field_dict = coerce_field(field)
+            field_dict = _to_dict(str(field))
             fieldtype = field_dict["type"].lower()
 
             spec, add_field = FIELDS[fieldtype.lower()]
+            spec = cast("list[tuple[str, type]]", spec)
             try:
                 validate_field(field_dict, spec)
             except KeyError as ex:
@@ -414,16 +429,15 @@ class GmshMesher:
                     f'invalid field type {fieldtype}. Allowed are: "MathEval", "Threshold".'
                 ) from ex
 
-            # Insert geometry, and create distance field
+            field_gdf = cast("gpd.GeoDataFrame", field_gdf)
             nodes_list = add_field_geometry(field_gdf, minimum_cellsize)
-            add_distance_field(nodes_list, [], 0, distance_id)
+            add_distance_field(nodes_list, np.empty(0, np.int64), 0, distance_id)
 
-            # Add field based on distance field
             add_field(field_dict, distance_id=distance_id, field_id=field_id)
             self._fields_list.append(field_id)
             self._distance_fields_list.append(distance_id)
 
-        self.fields = pd.concat(self.fields, gdf)
+        self.fields = pd.concat([self.fields, gdf])
 
     def add_structured_field(
         self,
@@ -432,7 +446,6 @@ class GmshMesher:
         ymin: float,
         dx: float,
         dy: float,
-        outside_value: float | None = None,
     ) -> None:
         """Add a structured field specifying cell sizes.
 
@@ -455,12 +468,6 @@ class GmshMesher:
             Value outside of the window ``(xmin, xmax)`` and ``(ymin, ymax)``.
             Default value is None.
         """
-        if outside_value is not None:
-            set_outside_value = True
-        else:
-            set_outside_value = False
-            outside_value = -1.0
-
         field_id = self._new_field_id()
         path = f"{self._tmpdir.name}/structured_field_{field_id}.dat"
         add_structured_field(
@@ -469,8 +476,6 @@ class GmshMesher:
             ymin,
             dx,
             dy,
-            outside_value,
-            set_outside_value,
             field_id,
             path,
         )
@@ -551,6 +556,7 @@ class GmshMesher:
 
 def gdf_mesher(
     gdf: gpd.GeoDataFrame,
+    meshing_algorithm: Algorithms = "AUTOMATIC",
     extensive_variables: list[str] | None = None,
     intensive_variables: list[str] | None = None,
     categorical_variables: list[str] | None = None,
@@ -558,7 +564,7 @@ def gdf_mesher(
     """Generate a mesh from a geodataframe.
 
     This function uses default Gmsh parameters. For more control, use
-    :py:class:`geomesher.GmshMesher`.
+    :class:`geomesher.GmshMesher`.
 
     Parameters
     ----------
@@ -566,6 +572,18 @@ def gdf_mesher(
         The input must have at least one polygon and a column named ``cellsize``.
         Optionally, multiple polygons with different cell sizes can be included in
         the geodataframe. These can be used to achieve local mesh remfinement.
+    meshing_algorithm: str, optional
+        Meshing algorithm to use. Available algorithms are:
+
+        * ``MESH_ADAPT``
+        * ``AUTOMATIC``
+        * ``INITIAL_MESH_ONLY``
+        * ``FRONTAL_DELAUNAY``
+        * ``BAMG``
+        * ``FRONTAL_DELAUNAY_FOR_QUADS``
+        * ``PACKING_OF_PARALLELLOGRAMS``
+
+        For more details, see :attr:`geomesher.mesh_algorithm`.
     extensive_variables : list, optional
         Columns in dataframes for extensive variables for remapping,
         defaults to ``None``.
@@ -609,7 +627,8 @@ def gdf_mesher(
     A helpful index can be found near the bottom:
     https://gmsh.info/doc/texinfo/gmsh.html#Syntax-index
     """
-    mesher = GmshMesher(gdf)
+    mesher = Mesher(gdf)
+    mesher.mesh_algorithm = meshing_algorithm
     mesh = mesher.generate_gdf()
     mesher.finalize_gmsh()
     if extensive_variables or intensive_variables or categorical_variables:

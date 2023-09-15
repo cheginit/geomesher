@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import struct
 from pathlib import Path
+from typing import Any
 
 import gmsh
 import numpy as np
@@ -29,19 +30,19 @@ def write_structured_field_file(
 
     Parameters
     ----------
-    path: str or pathlib.Path
-    cellsize: 2D np.ndarray of floats
+    path : str or pathlib.Path
+        Path to the output file.
+    cellsize : 2D np.ndarray of floats
         Dimension order is (y, x), i.e. y differs along the rows and x differs along
         the columns.
-    xmin: float
-    ymin: float
-    dx: float
-    dy: float
-
-    Returns
-    -------
-    None
-        Writes a structured gmsh field file.
+    xmin : float
+        Minimum x coordinate.
+    ymin : float
+        Minimum y coordinate.
+    dx : float
+        Cell size in x direction.
+    dy : float
+        Cell size in y direction.
     """
     shape = cellsize.shape
     if cellsize.ndim != 2:
@@ -75,7 +76,7 @@ def add_distance_field(
     return None
 
 
-def validate_field(field: dict[str, str], spec: list[tuple[str, type]]) -> None:
+def validate_field(field: dict[str, Any], spec: list[tuple[str, type]]) -> None:
     for key, dtype in spec:
         fieldtype = field["type"]
         if key not in field:
@@ -89,15 +90,15 @@ def validate_field(field: dict[str, str], spec: list[tuple[str, type]]) -> None:
 
 def add_math_eval_field(field: dict[str, str], distance_id: int, field_id: int) -> None:
     function = field["function"]
-    if "{distance}" not in function:
-        raise ValueError("{distance} not in MathEval field function")
-    gmsh.model.mesh.field.add("MathEval", field_id)
     distance = f"F{distance_id}"
+    if f"{distance}" not in function:
+        raise ValueError(f"{distance} not in MathEval field function")
+    gmsh.model.mesh.field.add("MathEval", field_id)
     gmsh.model.mesh.field.setString(field_id, "F", function.format(distance=distance))
 
 
 def add_threshold_field(
-    field: dict[str, float | bool],
+    field: dict[str, float],
     field_id: int,
     distance_id: int,
 ) -> None:
@@ -117,8 +118,6 @@ def add_structured_field(
     ymin: float,
     dx: float,
     dy: float,
-    outside_value: float,
-    set_outside_value: bool,
     field_id: int,
     path: str,
 ) -> None:

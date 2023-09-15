@@ -8,7 +8,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import shapely
-from scipy.sparse import coo_matrix, csr_array, diags
+from scipy.sparse import coo_matrix, csr_matrix, diags
 
 from geomesher.exceptions import (
     InputValueError,
@@ -31,7 +31,7 @@ def _area_tables_binning(
     source_df: gpd.GeoDataFrame,
     target_df: gpd.GeoDataFrame,
     spatial_index: Literal["source", "target", "auto"],
-) -> csr_array:
+) -> csr_matrix:
     """Construct area allocation and source-target correspondence tables using a spatial indexing approach.
 
     Parameters
@@ -93,7 +93,7 @@ def area_interpolate(
     extensive_variables: str | list[str] | None = None,
     intensive_variables: str | list[str] | None = None,
     categorical_variables: str | list[str] | None = None,
-    table: csr_array | None = None,
+    table: csr_matrix | None = None,
     allocate_total: bool = True,
     spatial_index: Literal["source", "target", "auto"] = "auto",
 ) -> gpd.GeoDataFrame:
@@ -111,7 +111,7 @@ def area_interpolate(
         Columns in dataframes for intensive variables, defaults to ``None``.
     categorical_variables : list, optional
         Columns in dataframes for categorical variables, defaults to ``None``.
-    table : scipy.sparse.csr_array, optional
+    table : scipy.sparse.csr_matrix, optional
         Area allocation source-target correspondence
         table. If not provided, it will be built from ``source_df`` and
         ``target_df``.
@@ -200,12 +200,12 @@ def area_interpolate(
         den = 1.0 / den
         n = den.shape[0]
         den = den.reshape((n,))
-        den = diags([den], [0])
+        den = diags([den], [0])  # pyright: ignore[reportGeneralTypeIssues]
         weights = den.dot(table)  # row standardize table
 
         for variable in extensive_variables:
             vals = _finite_check(source_df, variable)
-            estimates = diags([vals], [0]).dot(weights)
+            estimates = diags([vals], [0]).dot(weights)  # pyright: ignore[reportGeneralTypeIssues]
             estimates = estimates.sum(axis=0)
             extensive.append(estimates.tolist()[0])
 
@@ -221,14 +221,14 @@ def area_interpolate(
         den = cast("npt.NDArray[np.float64]", 1.0 / (area + (area == 0)))
         n, k = den.shape
         den = den.reshape((k,))
-        den = diags([den], [0])
+        den = diags([den], [0])  # pyright: ignore[reportGeneralTypeIssues]
         weights = table.dot(den)
 
         for variable in intensive_variables:
             vals = _finite_check(source_df, variable)
             n = vals.shape[0]
             vals = vals.reshape((n,))
-            estimates = diags([vals], [0])
+            estimates = diags([vals], [0])  # pyright: ignore[reportGeneralTypeIssues]
             estimates = estimates.dot(weights).sum(axis=0)
             intensive.append(estimates.tolist()[0])
 
@@ -246,7 +246,9 @@ def area_interpolate(
             unique = source_df[variable].unique()
             for value in unique:
                 mask = source_df[variable] == value
-                _cat = np.asarray(table[mask].sum(axis=0))
+                _cat = np.asarray(
+                    table[mask].sum(axis=0)  # pyright: ignore[reportGeneralTypeIssues]
+                )
                 categorical[f"{variable}_{value}"] = _cat[0]
 
         categorical = pd.DataFrame(categorical)

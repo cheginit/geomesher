@@ -175,7 +175,7 @@ def separate(
     points = gdf.loc[geom_type == "Point"].copy()
     points = cast("gpd.GeoDataFrame", points)
     for df in (polygons, linestrings, points):
-        df["cellsize"] = df["cellsize"].astype(np.float64)
+        df["cellsize"] = df.cellsize.astype(np.float64)
         df.crs = None
 
     check_polygons(polygons.geometry)

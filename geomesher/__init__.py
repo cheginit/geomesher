@@ -3,8 +3,8 @@ from importlib.metadata import PackageNotFoundError, version
 
 from geomesher import exceptions
 from geomesher.area_weighted import area_interpolate
-from geomesher.gmsh_mesher import (
-    GmshMesher,
+from geomesher.mesher import (
+    Mesher,
     gdf_mesher,
     gmsh_env,
 )
@@ -15,7 +15,7 @@ except PackageNotFoundError:
     __version__ = "999"
 
 __all__ = [
-    "GmshMesher",
+    "Mesher",
     "gdf_mesher",
     "gmsh_env",
     "area_interpolate",
