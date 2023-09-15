@@ -6,7 +6,7 @@ import pathlib
 import tempfile
 from contextlib import contextmanager
 from enum import Enum, IntEnum
-from typing import Generator, Literal
+from typing import Generator, Literal, cast
 
 import geopandas as gpd
 import gmsh
@@ -14,14 +14,15 @@ import numpy as np
 import pandas as pd
 import shapely
 
+from geomesher import area_weighted
 from geomesher.common import (
     FloatArray,
-    InputValueError,
     IntArray,
     check_geodataframe,
     repr,
     separate,
 )
+from geomesher.exceptions import InputValueError
 from geomesher.gmsh_fields import (
     FIELDS,
     add_distance_field,
@@ -31,10 +32,7 @@ from geomesher.gmsh_fields import (
 from geomesher.gmsh_geometry import add_field_geometry, add_geometry
 
 __all__ = [
-    "FieldCombination",
     "GmshMesher",
-    "MeshAlgorithm",
-    "SubdivisionAlgorithm",
     "gmsh_env",
     "gdf_mesher",
 ]
@@ -400,7 +398,7 @@ class GmshMesher:
             raise ValueError("field column is missing from geodataframe")
 
         # Explode just in case to get rid of multi-elements
-        gdf = gdf.explode()
+        # gdf = gdf.explode()
 
         for field, field_gdf in gdf.groupby("field"):
             distance_id = self._new_field_id()
@@ -481,11 +479,13 @@ class GmshMesher:
     def _vertices(self) -> FloatArray:
         # getNodes returns: node_tags, coord, parametric_coord
         _, vertices, _ = gmsh.model.mesh.getNodes()
+        vertices = cast("FloatArray", vertices)
         return vertices.reshape((-1, 3))[:, :2]
 
     def _faces(self) -> IntArray:
         element_types, _, node_tags = gmsh.model.mesh.getElements()
         tags = dict(zip(element_types, node_tags))
+        tags = cast("dict[int, IntArray]", tags)
         _triangle = 2
         _quad = 3
         _fill_value = 0
@@ -530,11 +530,11 @@ class GmshMesher:
 
         return self._vertices(), self._faces()
 
-    def generate_gdf(self) -> gpd.GeoSeries:
+    def generate_gdf(self) -> gpd.GeoDataFrame:
         """Generate the mesh and return it as a ``geopandas.GeoSeries``."""
         vertices, faces = self.generate()
         nodes = vertices[faces]
-        return gpd.GeoSeries(shapely.polygons(nodes), crs=self.gdf_crs)
+        return gpd.GeoDataFrame(geometry=shapely.polygons(nodes), crs=self.gdf_crs)
 
     def write(self, path: str | pathlib.Path):
         """Write a gmsh .msh file.
@@ -549,10 +549,15 @@ class GmshMesher:
         return repr(self)
 
 
-def gdf_mesher(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
+def gdf_mesher(
+    gdf: gpd.GeoDataFrame,
+    extensive_variables: list[str] | None = None,
+    intensive_variables: list[str] | None = None,
+    categorical_variables: list[str] | None = None,
+) -> gpd.GeoDataFrame:
     """Generate a mesh from a geodataframe.
 
-    This function uses defaults Gmsh parameters. For more control, use
+    This function uses default Gmsh parameters. For more control, use
     :py:class:`geomesher.GmshMesher`.
 
     Parameters
@@ -561,11 +566,20 @@ def gdf_mesher(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
         The input must have at least one polygon and a column named ``cellsize``.
         Optionally, multiple polygons with different cell sizes can be included in
         the geodataframe. These can be used to achieve local mesh remfinement.
+    extensive_variables : list, optional
+        Columns in dataframes for extensive variables for remapping,
+        defaults to ``None``.
+    intensive_variables : list, optional
+        Columns in dataframes for intensive variables for remapping,
+        defaults to ``None``.
+    categorical_variables : list, optional
+        Columns in dataframes for categorical variables for remapping,
+        defaults to ``None``.
 
     Returns
     -------
-    mesh: geopandas.GeoSeries
-        The mesh as a geopandas.GeoSeries.
+    mesh: geopandas.GeoDataFrame
+        The mesh as a geopandas.GeoDataFrame.
 
     Notes
     -----
@@ -587,7 +601,7 @@ def gdf_mesher(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
         * Holes in polygons are fully supported, but they must not contain
           any linestrings or points.
 
-    If such cases are detected, the initialization will error.
+    If such cases are detected, the initialization will throw an error.
 
     For more details on Gmsh, see:
     https://gmsh.info/doc/texinfo/gmsh.html
@@ -598,4 +612,12 @@ def gdf_mesher(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
     mesher = GmshMesher(gdf)
     mesh = mesher.generate_gdf()
     mesher.finalize_gmsh()
+    if extensive_variables or intensive_variables or categorical_variables:
+        return area_weighted.area_interpolate(
+            gdf,
+            mesh,
+            extensive_variables=extensive_variables,
+            intensive_variables=intensive_variables,
+            categorical_variables=categorical_variables,
+        )
     return mesh
