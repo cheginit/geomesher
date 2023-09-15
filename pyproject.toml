@@ -7,7 +7,7 @@ requires = [
 
 [project]
 name = "geomesher"
-description = "Remap a geodataframe to a triangulated mesh using gmesh"
+description = "Meshing a GeoDataFrame using Gmsh."
 readme = { file = "README.rst", content-type = "text/x-rst" }
 keywords = [
   'geopandas',
