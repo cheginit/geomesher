@@ -62,12 +62,13 @@ For more advanced interpolation methods, please use `Tobler <https://pysal.org/t
 Installation
 ------------
 
-You can install GeoMesher using ``pip`` or ``conda`` (``mamba``):
+You can install GeoMesher using ``pip``:
 
 .. code-block:: console
 
     $ pip install geomesher
 
+or using ``conda`` (``mamba``):
 
 .. code-block:: console
 
