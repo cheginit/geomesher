@@ -36,8 +36,9 @@ dynamic = [
 dependencies = [
   "geopandas",
   "gmsh",
-  "numpy",
+  "numpy>=1.21",
   "pandas",
+  "scipy",
   "shapely>=2",
 ]
 [project.optional-dependencies]
