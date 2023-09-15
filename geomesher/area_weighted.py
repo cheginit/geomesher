@@ -1,18 +1,24 @@
 """Area Weighted Interpolation based on `tobler <https://github.com/pysal/tobler>`__."""
-from typing import Literal, cast, TYPE_CHECKING
+from __future__ import annotations
+
+from typing import Literal, cast
 
 import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import shapely
-from scipy.sparse import coo_matrix, diags
+from scipy.sparse import coo_matrix, csr_array, diags
 
-from exceptions import InputValueError, MatchingCRSError, MissingCRSError, ProjectedCRSError
+from geomesher.exceptions import (
+    InputValueError,
+    MatchingCRSError,
+    MissingCRSError,
+    ProjectedCRSError,
+)
 
-if TYPE_CHECKING:
-    from scipy.sparse import csr_array
 __all__ = ["area_interpolate"]
+
 
 def _finite_check(df: gpd.GeoDataFrame, column: str) -> npt.NDArray[np.float64]:
     """Check if variable has nan or inf values and replace them with 0.0."""
@@ -50,15 +56,12 @@ def _area_tables_binning(
     tables : scipy.sparse.csr_matrix
 
     """
-    df1 = cast("gpd.GeoDataFrame", source_df.copy())
-    df2 = cast("gpd.GeoDataFrame", target_df.copy())
+    df1 = source_df.copy()
+    df2 = target_df.copy()
 
     # it is generally more performant to use the longer df as spatial index
     if spatial_index == "auto":
-        if df1.shape[0] > df2.shape[0]:
-            spatial_index = "source"
-        else:
-            spatial_index = "target"
+        spatial_index = "source" if df1.shape[0] > df2.shape[0] else "target"
 
     if spatial_index == "source":
         ids_tgt, ids_src = df1.sindex.query(df2.geometry, predicate="intersects")
@@ -81,21 +84,19 @@ def _area_tables_binning(
         dtype="f4",
     )
 
-    table = table.tocsr()
-
-    return table
+    return table.tocsr()
 
 
 def area_interpolate(
     source_df: gpd.GeoDataFrame,
     target_df: gpd.GeoDataFrame,
-    extensive_variables: list[str] | None = None,
-    intensive_variables: list[str] | None = None,
-    categorical_variables: list[str] | None = None,
+    extensive_variables: str | list[str] | None = None,
+    intensive_variables: str | list[str] | None = None,
+    categorical_variables: str | list[str] | None = None,
     table: csr_array | None = None,
     allocate_total: bool = True,
     spatial_index: Literal["source", "target", "auto"] = "auto",
-)-> gpd.GeoDataFrame:
+) -> gpd.GeoDataFrame:
     r"""Area interpolation for extensive, intensive and categorical variables.
 
     Parameters
@@ -179,8 +180,8 @@ def area_interpolate(
     if not source_df.crs.is_projected:
         raise ProjectedCRSError
 
-    source_df = cast("gpd.GeoDataFrame", source_df.copy())
-    target_df = cast("gpd.GeoDataFrame", target_df.copy())
+    source_df = source_df.copy()
+    target_df = target_df.copy()
 
     if table is None:
         table = _area_tables_binning(source_df, target_df, spatial_index)
@@ -188,6 +189,9 @@ def area_interpolate(
     dfs = []
     extensive = []
     if extensive_variables:
+        extensive_variables = (
+            [extensive_variables] if isinstance(extensive_variables, str) else extensive_variables
+        )
         den = source_df.area.to_numpy("f8")
         if allocate_total:
             den = np.asarray(table.sum(axis=1), "f8")
@@ -196,12 +200,12 @@ def area_interpolate(
         den = 1.0 / den
         n = den.shape[0]
         den = den.reshape((n,))
-        den = diags([den], 0)
+        den = diags([den], [0])
         weights = den.dot(table)  # row standardize table
 
         for variable in extensive_variables:
             vals = _finite_check(source_df, variable)
-            estimates = diags([vals], 0).dot(weights)
+            estimates = diags([vals], [0]).dot(weights)
             estimates = estimates.sum(axis=0)
             extensive.append(estimates.tolist()[0])
 
@@ -210,18 +214,21 @@ def area_interpolate(
 
     intensive = []
     if intensive_variables:
+        intensive_variables = (
+            [intensive_variables] if isinstance(intensive_variables, str) else intensive_variables
+        )
         area = np.asarray(table.sum(axis=0))
         den = cast("npt.NDArray[np.float64]", 1.0 / (area + (area == 0)))
         n, k = den.shape
         den = den.reshape((k,))
-        den = diags([den], 0)
+        den = diags([den], [0])
         weights = table.dot(den)
 
         for variable in intensive_variables:
             vals = _finite_check(source_df, variable)
             n = vals.shape[0]
             vals = vals.reshape((n,))
-            estimates = diags([vals], 0)
+            estimates = diags([vals], [0])
             estimates = estimates.dot(weights).sum(axis=0)
             intensive.append(estimates.tolist()[0])
 
@@ -230,6 +237,11 @@ def area_interpolate(
 
     categorical = {}
     if categorical_variables:
+        categorical_variables = (
+            [categorical_variables]
+            if isinstance(categorical_variables, str)
+            else categorical_variables
+        )
         for variable in categorical_variables:
             unique = source_df[variable].unique()
             for value in unique:

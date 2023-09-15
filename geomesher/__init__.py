@@ -1,11 +1,10 @@
 """Top-level API for geomesher."""
 from importlib.metadata import PackageNotFoundError, version
 
+from geomesher import exceptions
+from geomesher.area_weighted import area_interpolate
 from geomesher.gmsh_mesher import (
-    FieldCombination,
     GmshMesher,
-    MeshAlgorithm,
-    SubdivisionAlgorithm,
     gdf_mesher,
     gmsh_env,
 )
@@ -16,10 +15,9 @@ except PackageNotFoundError:
     __version__ = "999"
 
 __all__ = [
-    "FieldCombination",
     "GmshMesher",
-    "MeshAlgorithm",
-    "SubdivisionAlgorithm",
     "gdf_mesher",
     "gmsh_env",
+    "area_interpolate",
+    "exceptions",
 ]

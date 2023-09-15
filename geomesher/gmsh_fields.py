@@ -7,7 +7,7 @@ from pathlib import Path
 import gmsh
 import numpy as np
 
-from geomesher.common import FloatArray
+from geomesher.common import FloatArray, IntArray
 
 
 def write_structured_field_file(
@@ -63,8 +63,8 @@ def write_structured_field_file(
 
 
 def add_distance_field(
-    nodes_list: list[int],
-    edges_list: list[int],
+    nodes_list: IntArray,
+    edges_list: IntArray,
     n_nodes_by_edge: int,
     field_id: int,
 ) -> None:
@@ -97,7 +97,7 @@ def add_math_eval_field(field: dict[str, str], distance_id: int, field_id: int) 
 
 
 def add_threshold_field(
-    field: dict[str, str],
+    field: dict[str, float | bool],
     field_id: int,
     distance_id: int,
 ) -> None:

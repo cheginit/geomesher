@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import geopandas as gpd
 import gmsh
@@ -161,7 +162,7 @@ def collect_linestrings(
 
 
 def collect_points(points: gpd.GeoDataFrame) -> FloatArray:
-    return np.stack((points["geometry"].x, points["geometry"].y), axis=1)
+    return np.stack((points.geometry.x, points.geometry.y), axis=1)
 
 
 def embed_where(gdf: gpd.GeoDataFrame, polygons: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -191,6 +192,7 @@ def add_geometry(
     # Get the unique vertices, and generate the array of indices pointing to
     # them for every feature
     vertices, indices = np.unique(vertices.reshape(-1).view(coord_dtype), return_inverse=True)
+    vertices = cast("FloatArray", vertices)
     vertex_tags = np.arange(1, len(vertices) + 1)
     tags = vertex_tags[indices]
     # Get the smallest cellsize per vertex
@@ -243,9 +245,9 @@ def add_field_polygons(polygons: gpd.GeoSeries, minimum_cellsize: float) -> IntA
     return np.concatenate([add_field_linestring(p, minimum_cellsize) for p in pol_list])
 
 
-def add_field_geometry(geometry: gpd.GeoSeries, minimum_cellsize: float) -> IntArray:
+def add_field_geometry(geometry: gpd.GeoDataFrame, minimum_cellsize: float) -> IntArray:
     polygons, linestrings, points = separate(geometry)
-    point_nodes = add_field_points(points)
-    linestring_nodes = add_field_linestrings(linestrings, minimum_cellsize)
-    polygon_nodes = add_field_polygons(polygons, minimum_cellsize)
+    point_nodes = add_field_points(points.geometry)
+    linestring_nodes = add_field_linestrings(linestrings.geometry, minimum_cellsize)
+    polygon_nodes = add_field_polygons(polygons.geometry, minimum_cellsize)
     return np.concatenate((point_nodes, linestring_nodes, polygon_nodes))

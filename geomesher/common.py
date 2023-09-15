@@ -4,7 +4,7 @@ from __future__ import annotations
 import functools
 import operator
 from itertools import combinations
-from typing import Any, Generator, Sequence, cast
+from typing import Any, Sequence, cast
 
 import geopandas as gpd
 import numpy as np
@@ -31,28 +31,6 @@ def repr(obj: Any) -> str:
 
 def flatten(seq: Sequence[Any]):
     return functools.reduce(operator.concat, seq)
-
-
-class InputValueError(Exception):
-    """Exception raised for invalid input.
-
-    Parameters
-    ----------
-    inp : str
-        Name of the input parameter
-    valid_inputs : tuple
-        List of valid inputs
-    """
-
-    def __init__(
-        self, inp: str, valid_inputs: Sequence[str | int] | Generator[str | int, None, None]
-    ) -> None:
-        self.message = f"Given {inp} is invalid. Valid value are:\n"
-        self.message += ", ".join(str(i) for i in valid_inputs)
-        super().__init__(self.message)
-
-    def __str__(self) -> str:
-        return self.message
 
 
 def check_geodataframe(features: gpd.GeoDataFrame) -> None:
@@ -190,11 +168,11 @@ def separate(
     if not geom_type.isin(acceptable).all():
         raise TypeError(f"Geometry should be one of {acceptable}")
 
-    polygons = gdf[geom_type == "Polygon"].copy()
+    polygons = gdf.loc[geom_type == "Polygon"].copy()
     polygons = cast("gpd.GeoDataFrame", polygons)
-    linestrings = gdf[geom_type == "LineString"].copy()
+    linestrings = gdf.loc[geom_type == "LineString"].copy()
     linestrings = cast("gpd.GeoDataFrame", linestrings)
-    points = gdf[geom_type == "Point"].copy()
+    points = gdf.loc[geom_type == "Point"].copy()
     points = cast("gpd.GeoDataFrame", points)
     for df in (polygons, linestrings, points):
         df["cellsize"] = df["cellsize"].astype(np.float64)
