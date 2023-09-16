@@ -23,8 +23,8 @@ def area(vertices, triangles):
 
 
 def gmsh_generate(gdf: gpd.GeoDataFrame):
-    mesher = pm.GmshMesher(gdf)
-    return mesher.generate()
+    mesher = pm.Mesher(gdf)
+    return mesher.run_gmsh()
 
 
 def test_basic():
@@ -76,7 +76,7 @@ def test_adjacent_donut():
 def test_gmsh_properties():
     gdf = gpd.GeoDataFrame(geometry=[donut])
     gdf["cellsize"] = 1.0
-    mesher = pm.GmshMesher(gdf)
+    mesher = pm.Mesher(gdf)
 
     # Set default values for meshing parameters
     mesher.mesh_algorithm = "FRONTAL_DELAUNAY"
