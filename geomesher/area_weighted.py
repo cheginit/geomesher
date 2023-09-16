@@ -140,30 +140,33 @@ def area_interpolate(
     Notes
     -----
     The assumption is both dataframes have the same coordinate reference system.
-    For an extensive variable, the estimate at target polygon j (default case) is:
+    For an extensive variable, the estimate at target polygon :math:`j` (default case) is:
 
     .. math::
-        v_j = \\sum_i v_i w_{i,j}
 
-        w_{i,j} = a_{i,j} / \\sum_k a_{i,k}
+        v_j = \sum_i v_i w_{i,j}
+
+        w_{i,j} = \frac{a_{i,j}}{\sum_k a_{i,k}}
 
     If the area of the source polygon is not exhausted by intersections with
     target polygons and there is reason to not allocate the complete value of
-    an extensive attribute, then setting allocate_total=False will use the
+    an extensive attribute, then setting ``allocate_total=False`` will use the
     following weights:
 
     .. math::
-        v_j = \\sum_i v_i w_{i,j}
 
-        w_{i,j} = a_{i,j} / a_i
+        v_j = \sum_i v_i w_{i,j}
 
-    where a_i is the total area of source polygon i.
-    For an intensive variable, the estimate at target polygon j is:
+        w_{i,j} = \frac{a_{i,j}}{a_i}
+
+    where :math:`a_i` is the total area of source polygon :math:`i`.
+    For an intensive variable, the estimate at target polygon :math:`j` is:
 
     .. math::
-        v_j = \\sum_i v_i w_{i,j}
 
-        w_{i,j} = a_{i,j} / \\sum_k a_{k,j}
+        v_j = \sum_i v_i w_{i,j}
+
+        w_{i,j} = \frac{a_{i,j}}{\sum_k a_{k,j}}
 
     For categorical variables, the estimate returns ratio of presence of each
     unique category.
