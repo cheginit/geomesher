@@ -182,7 +182,7 @@ disable = [
 ]
 
 [tool.codespell]
-skip = "__pycache__,_build,.mypy_cache,.git,./htmlcov,.nox,build"
+skip = "__pycache__,_build,.mypy_cache,.git,./htmlcov,.nox,build,*.ipynb"
 
 [tool.pycln]
 all = true
