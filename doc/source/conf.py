@@ -4,10 +4,10 @@
 import datetime
 import inspect
 import os
-from pathlib import Path
 import subprocess
 import sys
 from contextlib import suppress
+from pathlib import Path
 from textwrap import dedent, indent
 
 import yaml
@@ -46,7 +46,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
-    'autoapi.extension',
+    "autoapi.extension",
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "nbsphinx",
@@ -97,8 +97,11 @@ autoapi_options = ["members"]
 autoapi_member_order = "groupwise"
 # autoapi_keep_files = True
 # autoapi_add_toctree_entry = False
+modindex_common_prefix = ["geomesher."]
 
-autodoc_typehints = "none"
+# autodoc_typehints = "none"
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 
 # Napoleon configurations
 napoleon_google_docstring = False
@@ -211,18 +214,18 @@ html_context = {
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = dict(
+html_theme_options = {
     # analytics_id=''  this is configured in rtfd.io
     # canonical_url="",
-    repository_url="https://github.com/cheginit/geomesher",
-    repository_branch="main",
-    path_to_docs="doc",
-    use_edit_page_button=True,
-    use_repository_button=True,
-    use_issues_button=True,
-    home_page_in_toc=False,
-    icon_links=[],  # workaround for pydata/pydata-sphinx-theme#1220
-)
+    "repository_url": "https://github.com/cheginit/geomesher",
+    "repository_branch": "main",
+    "path_to_docs": "doc",
+    "use_edit_page_button": True,
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "home_page_in_toc": False,
+    "icon_links": [],  # workaround for pydata/pydata-sphinx-theme#1220
+}
 
 
 # The name of an image file (relative to this directory) to place at the top
@@ -279,6 +282,7 @@ intersphinx_mapping = {
     "shapely": ("https://shapely.readthedocs.io/en/stable", None),
 }
 
+
 # based on numpy doc/source/conf.py
 def linkcode_resolve(domain: str, info: dict[str, str]):
     """Determine the URL corresponding to Python object."""
@@ -312,10 +316,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]):
         source = []
         lineno = None
 
-    if lineno:
-        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
-    else:
-        linespec = ""
+    linespec = f"#L{lineno}-L{lineno + len(source) - 1}" if lineno else ""
 
     fn = os.path.relpath(fn, start=os.path.dirname(geomesher.__file__))
 
@@ -323,12 +324,14 @@ def linkcode_resolve(domain: str, info: dict[str, str]):
         return f"https://github.com/cheginit/geomesher/blob/main/geomesher/{fn}{linespec}"
     else:
         return (
-            f"https://github.com/cheginit/geomesher/blob/"
+            "https://github.com/cheginit/geomesher/blob/"
             f"v{geomesher.__version__}/geomesher/{fn}{linespec}"
         )
 
 
-def html_page_context(app: Sphinx, pagename: str, templatename: str, context: dict[str, bool], doctree: str)->None:
+def html_page_context(
+    app: Sphinx, pagename: str, templatename: str, context: dict[str, bool], doctree: str
+) -> None:
     # Disable edit button for docstring generated pages
     if "generated" in pagename:
         context["theme_use_edit_page_button"] = False
@@ -339,14 +342,15 @@ def update_gallery(app: Sphinx):
 
     Taken from https://github.com/pydata/xarray/blob/main/doc/conf.py
     """
-
     LOGGER.info("Updating gallery page...")
 
     gallery = yaml.safe_load(Path(app.srcdir, "gallery.yml").read_bytes())
-    for item in gallery:
-        thumb = Path(item['thumbnail'])
-        thumb.parent.mkdir(parents=True, exist_ok=True)
-        thumb.write_bytes(Path(app.srcdir, "examples", "notebooks", "_static", thumb.name).read_bytes())
+    # for item in gallery:
+        # thumb = Path(item["thumbnail"])
+        # thumb.parent.mkdir(parents=True, exist_ok=True)
+        # thumb.write_bytes(
+        #     Path(app.srcdir, "examples", "notebooks", "_static", thumb.name).read_bytes()
+        # )
 
     items = [
         f"""
@@ -375,4 +379,4 @@ def update_gallery(app: Sphinx):
 
 def setup(app: Sphinx):
     app.connect("html-page-context", html_page_context)
-    # app.connect("builder-inited", update_gallery)
+    app.connect("builder-inited", update_gallery)

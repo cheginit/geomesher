@@ -75,10 +75,9 @@ GeoMesher is a fork of `pandamesh <https://github.com/Deltares/pandamesh>`__ (MI
 and uses one of the modules in
 `Tobler <https://pysal.org/tobler/index.html>`__ (BSD-3-Clause License).
 
-Contents
---------
-
 .. toctree::
+    :hidden:
 
-   usage
-   autoapi/index
+    usage
+    gallery
+    autoapi/index
