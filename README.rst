@@ -47,7 +47,8 @@ Features
 GeoMesher is a fork of `pandamesh <https://github.com/Deltares/pandamesh>`__. The original
 package included two mesh generators: `Triangle <https://www.cs.cmu.edu/~quake/triangle.html>`__
 and `Gmsh <https://gmsh.info/>`__. This fork only includes the Gmsh mesh generator since
-Triangle seems to be not maintained anymore. Also, GeoMesher adds three new functionalities:
+Triangle seems to be not maintained anymore. Also, GeoMesher adds the following new
+functionalities:
 
 * A new method for returning the generated mesh as a GeoDataFrame.
 * A new function called ``gdf_mesher`` that can generate a mesh from a GeoDataFrame
@@ -55,6 +56,7 @@ Triangle seems to be not maintained anymore. Also, GeoMesher adds three new func
 * Remap a scalar field from the source GeoDataFrame to the generated mesh,
   using an area weighted interpolation method
   (based on `Tobler <https://github.com/pysal/tobler>`__).
+* Handle ``MultiPolygon`` geometries in the source GeoDataFrame.
 
 Note that the remapping functionality of GeoMesher is a simple areal interpolation method.
 For more advanced interpolation methods, please use `Tobler <https://pysal.org/tobler/index.html>`__.
@@ -110,7 +112,7 @@ from the source GeoDataFrame to the generated mesh.
     mesh_adapt = mesher.generate_gdf()
     mesh_adapt = gm.area_interpolate(south_america, mesh_adapt, intensive_variables=["POP_EST"])
 
-.. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/docs/_static/demo.png
+.. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/demo.png
   :target: https://github.com/cheginit/geomesher
 
 Contributing
