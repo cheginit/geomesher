@@ -1,4 +1,4 @@
-"""Generate mesh using GMSH."""
+"""Generate mesh using Gmsh."""
 from __future__ import annotations
 
 import json
@@ -52,6 +52,7 @@ Subdivisions = Literal["NONE", "ALL_QUADRANGLES", "BARYCENTRIC"]
 
 @contextmanager
 def gmsh_env() -> Generator[None, None, None]:
+    """Context manager for Gmsh initialization and finalization."""
     if gmsh.isInitialized():
         gmsh.finalize()
 
@@ -135,7 +136,7 @@ class Mesher:
 
     This class must be initialized
     with a ``geopandas.GeoDataFrame`` containing at least one polygon, and a column
-    named ``"cellsize"``.
+    named ``cellsize``.
 
     Optionally, multiple polygons with different cell sizes can be included in
     the geodataframe. These can be used to achieve local mesh remfinement.
@@ -149,14 +150,14 @@ class Mesher:
     located exactly on segments. During initialization, the geometries of
     the geodataframe are checked:
 
-        * Polygons should not have any overlap with each other.
-        * Linestrings should not intersect each other.
-        * Every linestring should be fully contained by a single polygon;
-          a linestring may not intersect two or more polygons.
-        * Linestrings and points should not "touch" / be located on
-          polygon borders.
-        * Holes in polygons are fully supported, but they must not contain
-          any linestrings or points.
+    * Polygons should not have any overlap with each other.
+    * Linestrings should not intersect each other.
+    * Every linestring should be fully contained by a single polygon;
+      a linestring may not intersect two or more polygons.
+    * Linestrings and points should not "touch" or be located on
+      polygon borders.
+    * Holes in polygons are fully supported, but they must not contain
+      any linestrings or points.
 
     If such cases are detected, the initialization will error.
 
@@ -207,14 +208,11 @@ class Mesher:
         """Finalize Gmsh."""
         gmsh.finalize()
 
-    # Properties
-    # ----------
-
     @property
     def mesh_algorithm(
         self,
     ) -> Algorithms:
-        """Can be set to one of :class:`geomesher.MeshAlgorithm`.
+        """Meshing algorithm to use.
 
         Available algorithms are:
 
@@ -237,19 +235,19 @@ class Mesher:
         generate the final mesh:
 
         * The MeshAdapt algorithm is based on local mesh modifications. This
-        technique makes use of edge swaps, splits, and collapses: long edges
-        are split, short edges are collapsed, and edges are swapped if a
-        better geometrical configuration is obtained.
+          technique makes use of edge swaps, splits, and collapses: long edges
+          are split, short edges are collapsed, and edges are swapped if a
+          better geometrical configuration is obtained.
         * The Delaunay algorithm is inspired by the work of the GAMMA team at
-        INRIA. New points are inserted sequentially at the circumcenter of
-        the element that has the largest adimensional circumradius. The mesh
-        is then reconnected using an anisotropic Delaunay criterion.
+          INRIA. New points are inserted sequentially at the circumcenter of
+          the element that has the largest adimensional circumradius. The mesh
+          is then reconnected using an anisotropic Delaunay criterion.
         * The Frontal-Delaunay algorithm is inspired by the work of S. Rebay.
         * Other experimental algorithms with specific features are also
-        available. In particular, Frontal-Delaunay for Quads is a variant of
-        the Frontal-Delaunay algorithm aiming at generating right-angle
-        triangles suitable for recombination; and BAMG allows to generate
-        anisotropic triangulations.
+          available. In particular, Frontal-Delaunay for Quads is a variant of
+          the Frontal-Delaunay algorithm aiming at generating right-angle
+          triangles suitable for recombination; and BAMG allows to generate
+          anisotropic triangulations.
 
         For very complex curved surfaces the MeshAdapt algorithm is the most robust.
         When high element quality is important, the Frontal-Delaunay algorithm should
@@ -320,18 +318,15 @@ class Mesher:
 
     @property
     def mesh_size_from_curvature(self) -> bool:
-        """Automatically compute mesh element sizes from curvature.
+        r"""Automatically compute mesh element sizes from curvature.
 
-        It uses the value as the target number of elements per 2 * Pi radians.
+        It uses the value as the target number of elements per
+        :math:`2 \pi` radians.
         """
         return self._mesh_size_from_curvature
 
     @mesh_size_from_curvature.setter
     def mesh_size_from_curvature(self, value: bool) -> None:
-        """Automatically compute mesh element sizes from curvature.
-
-        It uses the value as the target number of elements per 2 * Pi radians.
-        """
         if not isinstance(value, bool):
             raise TypeError("mesh_size_from_curvature must be a bool")
         self._mesh_size_from_curvature = value
@@ -406,9 +401,9 @@ class Mesher:
 
         Parameters
         ----------
-        gdf: geopandas.GeoDataFrame
+        gdf : geopandas.GeoDataFrame
             Location and cell size of the fields, as vector data.
-        minimum_cellsize: float
+        minimum_cellsize : float
             Minimum cell size.
         """
         if "field" not in gdf.columns:
@@ -437,7 +432,7 @@ class Mesher:
             self._fields_list.append(field_id)
             self._distance_fields_list.append(distance_id)
 
-        self.fields = pd.concat([self.fields, gdf])
+        self.fields = pd.concat([self.fields, gdf], ignore_index=True)
 
     def add_structured_field(
         self,
@@ -453,20 +448,17 @@ class Mesher:
 
         Parameters
         ----------
-        cellsize: FloatArray with shape ``(n_y, n_x)``
+        cellsize : FloatArray
             Specifies the cell size on a structured grid. The location of this grid
-            is determined by ``xmin, ymin, dx, dy``.
-        xmin: float
+            is determined by ``xmin``, ``ymin``, ``dx``, ``dy``.
+        xmin : float
             x-origin.
-        ymin: float
+        ymin : float
             y-origin.
-        dx: float
+        dx : float
             Spacing along the x-axis.
-        dy: float
+        dy : float
             Spacing along the y-axis.
-        outside_value: float, optional
-            Value outside of the window ``(xmin, xmax)`` and ``(ymin, ymax)``.
-            Default value is None.
         """
         field_id = self._new_field_id()
         path = f"{self._tmpdir.name}/structured_field_{field_id}.dat"
@@ -512,15 +504,16 @@ class Mesher:
         # convert to 0-based index
         return faces - 1
 
-    def generate(self) -> tuple[FloatArray, IntArray]:
-        """
-        Generate a mesh of triangles or quadrangles.
+    def run_gmsh(self) -> tuple[FloatArray, IntArray]:
+        """Generate a mesh of triangles or quadrangles.
 
         Returns
         -------
-        vertices: np.ndarray of floats with shape ``(n_vertex, 2)``
-        faces: np.ndarray of integers with shape ``(n_face, nmax_per_face)``
-            ``nmax_per_face`` is 3 for exclusively triangles and 4 if
+        vertices : numpy.ndarray
+            Coordinates of mesh vertices with shape ``(n_vertex, 2)``
+        faces : numpy.ndarray
+            Index number of mesh faces  with shape ``(n_face, nmax_per_face)``.
+            Where ``nmax_per_face`` is 3 for exclusively triangles and 4 if
             quadrangles are included. A fill value of -1 is used as a last
             entry for triangles in that case.
         """
@@ -535,22 +528,22 @@ class Mesher:
 
         return self._vertices(), self._faces()
 
-    def generate_gdf(self) -> gpd.GeoDataFrame:
-        """Generate the mesh and return it as a ``geopandas.GeoSeries``."""
-        vertices, faces = self.generate()
+    def generate(self) -> gpd.GeoDataFrame:
+        """Generate the mesh and return it as a geopandas.GeoDataFrame."""
+        vertices, faces = self.run_gmsh()
         nodes = vertices[faces]
         return gpd.GeoDataFrame(geometry=shapely.polygons(nodes), crs=self.gdf_crs)
 
-    def write(self, path: str | pathlib.Path):
+    def write(self, path: str | pathlib.Path) -> None:
         """Write a gmsh .msh file.
 
         Parameters
         ----------
-        path: str or pathlib.Path
+        path : str or pathlib.Path
         """
         gmsh.write(path)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self)
 
 
@@ -564,15 +557,15 @@ def gdf_mesher(
     """Generate a mesh from a geodataframe.
 
     This function uses default Gmsh parameters. For more control, use
-    :class:`geomesher.GmshMesher`.
+    :class:`Mesher`.
 
     Parameters
     ----------
-    gdf: geopandas.GeoDataFrame
+    gdf : geopandas.GeoDataFrame
         The input must have at least one polygon and a column named ``cellsize``.
         Optionally, multiple polygons with different cell sizes can be included in
         the geodataframe. These can be used to achieve local mesh remfinement.
-    meshing_algorithm: str, optional
+    meshing_algorithm : str, optional
         Meshing algorithm to use. Available algorithms are:
 
         * ``MESH_ADAPT``
@@ -583,7 +576,7 @@ def gdf_mesher(
         * ``FRONTAL_DELAUNAY_FOR_QUADS``
         * ``PACKING_OF_PARALLELLOGRAMS``
 
-        For more details, see :attr:`geomesher.mesh_algorithm`.
+        For more details, see :attr:`Mesher.mesh_algorithm`.
     extensive_variables : list, optional
         Columns in dataframes for extensive variables for remapping,
         defaults to ``None``.
@@ -596,7 +589,7 @@ def gdf_mesher(
 
     Returns
     -------
-    mesh: geopandas.GeoDataFrame
+    mesh : geopandas.GeoDataFrame
         The mesh as a geopandas.GeoDataFrame.
 
     Notes
@@ -610,14 +603,13 @@ def gdf_mesher(
     located exactly on segments. During initialization, the geometries of
     the geodataframe are checked:
 
-        * Polygons should not have any overlap with each other.
-        * Linestrings should not intersect each other.
-        * Every linestring should be fully contained by a single polygon;
-          a linestring may not intersect two or more polygons.
-        * Linestrings and points should not "touch" / be located on
-          polygon borders.
-        * Holes in polygons are fully supported, but they must not contain
-          any linestrings or points.
+    * Polygons should not have any overlap with each other.
+    * Linestrings should not intersect each other.
+    * Every linestring should be fully contained by a single polygon;
+      a linestring may not intersect two or more polygons.
+    * Linestrings and points should not "touch" or be located on polygon borders.
+    * Holes in polygons are fully supported, but they must not contain
+      any linestrings or points.
 
     If such cases are detected, the initialization will throw an error.
 
@@ -629,7 +621,7 @@ def gdf_mesher(
     """
     mesher = Mesher(gdf)
     mesher.mesh_algorithm = meshing_algorithm
-    mesh = mesher.generate_gdf()
+    mesh = mesher.generate()
     mesher.finalize_gmsh()
     if extensive_variables or intensive_variables or categorical_variables:
         return area_weighted.area_interpolate(
