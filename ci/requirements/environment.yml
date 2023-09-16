@@ -5,9 +5,10 @@ channels:
 dependencies:
 - numpy
 - pandas
-- geopandas
+- geopandas-base
 - gmsh
 - python-gmsh
+- scipy
 - shapely >=2.0
 
 # test deps
