@@ -1,0 +1,18 @@
+ipykernel
+ipython
+ipywidgets
+jupyter_client
+nbsphinx
+sphinx
+sphinx-autoapi
+sphinx-book-theme
+sphinx-copybutton
+sphinx-design
+sphinx-gallery
+sphinxcontrib-bibtex
+sphinxext-opengraph
+pyyaml
+..
+
+# for examples
+matplotlib
