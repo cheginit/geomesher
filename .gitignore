@@ -53,3 +53,6 @@ coverage.xml
 # Distribution
 build/*
 dist/*
+
+# macOS
+.DS_Store
