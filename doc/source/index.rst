@@ -61,6 +61,9 @@ functionalities:
 Note that the remapping functionality of GeoMesher is a simple areal interpolation method.
 For more advanced interpolation methods, please use `Tobler <https://pysal.org/tobler/index.html>`__.
 
+.. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/demo.png
+  :target: https://github.com/cheginit/geomesher
+
 Credits
 -------
 
