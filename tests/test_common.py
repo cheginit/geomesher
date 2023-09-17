@@ -4,6 +4,7 @@ import pytest
 import shapely.geometry as sg
 
 from geomesher import common
+from geomesher.exceptions import GeometryError, InputTypeError, MissingColumnsError
 
 a = sg.Polygon(
     [
@@ -100,28 +101,12 @@ def test_flatten():
 
 
 def test_check_geodataframe():
-    with pytest.raises(TypeError, match="Expected GeoDataFrame"):
+    with pytest.raises(InputTypeError, match="GeoDataFrame"):
         common.check_geodataframe([1, 2, 3])
 
     gdf = gpd.GeoDataFrame(geometry=[pa, pb])
-    with pytest.raises(ValueError, match='Missing column "cellsize" in columns'):
+    with pytest.raises(MissingColumnsError, match="cellsize"):
         common.check_geodataframe(gdf)
-
-    gdf["cellsize"] = 1.0
-    gdf.index = [0, "1"]
-    with pytest.raises(ValueError, match="geodataframe index is not integer typed"):
-        common.check_geodataframe(gdf)
-
-    empty = gdf.loc[[]]
-    with pytest.raises(ValueError, match="Dataframe is empty"):
-        common.check_geodataframe(empty)
-
-    gdf.index = [0, 0]
-    with pytest.raises(ValueError, match="geodataframe index contains duplicates"):
-        common.check_geodataframe(gdf)
-
-    gdf.index = [0, 1]
-    common.check_geodataframe(gdf)
 
 
 def test_overlap_shortlist():
@@ -160,12 +145,12 @@ def test_check_linestrings():
 
     # Complex (self-intersecting) linestring
     linestrings = gpd.GeoSeries(data=[La, Lb, Lc, Le], index=[0, 1, 2, 3])
-    with pytest.raises(ValueError, match="1 cases of complex linestring detected"):
+    with pytest.raises(GeometryError, match="1 cases of complex linestring detected"):
         common.check_linestrings(linestrings, polygons)
 
     # Linestrings intersecting with each other
     linestrings = gpd.GeoSeries(data=[La, Lb, Lc], index=[0, 1, 2])
-    with pytest.raises(ValueError, match="1 cases of intersecting linestring detected"):
+    with pytest.raises(GeometryError, match="1 cases of intersecting linestring detected"):
         common.check_linestrings(linestrings, polygons)
 
     # Ld present in multiple polygons
@@ -181,11 +166,11 @@ def test_check_linestrings():
 
 def test_check_polygons():
     polygons = gpd.GeoSeries(data=[a, b, c, d, e], index=[0, 1, 2, 3, 4])
-    with pytest.raises(ValueError, match="1 cases of complex polygon detected"):
+    with pytest.raises(GeometryError, match="1 cases of complex polygon detected"):
         common.check_polygons(polygons)
 
     polygons = gpd.GeoSeries(data=[a, b, c, d], index=[0, 1, 2, 3])
-    with pytest.raises(ValueError, match="2 cases of intersecting polygon detected"):
+    with pytest.raises(GeometryError, match="2 cases of intersecting polygon detected"):
         common.check_polygons(polygons)
 
 

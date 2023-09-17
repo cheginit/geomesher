@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import geopandas as gpd
 import numpy as np
 import shapely.geometry as sg
 
-import geomesher as pm
+import geomesher as gm
+from geomesher.common import FloatArray, IntArray
 
 outer_coords = np.array([(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)])
 inner_coords = np.array([(3.0, 3.0), (7.0, 3.0), (7.0, 7.0), (3.0, 7.0)])
@@ -14,7 +17,7 @@ donut = sg.Polygon(outer, holes=[inner])
 refined = sg.Polygon(inner_coords)
 
 
-def area(vertices, triangles):
+def area(vertices: FloatArray, triangles: IntArray) -> FloatArray:
     """Compute the area of every triangle in the mesh. (Helper for these tests.)."""
     coords = vertices[triangles]
     u = coords[:, 1] - coords[:, 0]
@@ -22,8 +25,8 @@ def area(vertices, triangles):
     return 0.5 * np.abs(np.cross(u, v))
 
 
-def gmsh_generate(gdf: gpd.GeoDataFrame):
-    mesher = pm.Mesher(gdf)
+def gmsh_generate(gdf: gpd.GeoDataFrame) -> tuple[FloatArray, IntArray]:
+    mesher = gm.Mesher(gdf)
     return mesher.run_gmsh()
 
 
@@ -76,7 +79,7 @@ def test_adjacent_donut():
 def test_gmsh_properties():
     gdf = gpd.GeoDataFrame(geometry=[donut])
     gdf["cellsize"] = 1.0
-    mesher = pm.Mesher(gdf)
+    mesher = gm.Mesher(gdf)
 
     # Set default values for meshing parameters
     mesher.mesh_algorithm = "FRONTAL_DELAUNAY"
@@ -96,3 +99,12 @@ def test_gmsh_properties():
     assert mesher.mesh_size_from_curvature is True
     assert mesher.field_combination == "MEAN"
     assert mesher.subdivision_algorithm == "BARYCENTRIC"
+
+
+def test_gdf_mesher_area(ehydro: gpd.GeoDataFrame):
+    geoms = [ehydro.convex_hull.unary_union.simplify(5)]
+    poly = gpd.GeoDataFrame(geometry=geoms, crs=ehydro.crs)
+    poly["cellsize"] = 300.0
+    mesh = gm.gdf_mesher(poly, meshing_algorithm="MESH_ADAPT")
+    mesh = gm.area_interpolate(ehydro, mesh, intensive_variables=["depthMean"])
+    assert np.allclose(mesh.depthMean.mean(), ehydro.depthMean.mean(), rtol=0.04)
