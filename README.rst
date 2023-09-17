@@ -1,3 +1,8 @@
+.. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/logo-text.png
+    :target: https://geomesher.readthedocs.io
+
+|
+
 GeoMesher
 =========
 
