@@ -42,6 +42,26 @@ dependencies = [
   "shapely>=2",
 ]
 [project.optional-dependencies]
+doc = [
+  "ipykernel",
+  "ipython",
+  "ipywidgets",
+  "jupyter_client",
+  "jupyter_sphinx",
+  "nbsphinx",
+  "numpydoc",
+  "pydata-sphinx-theme",
+  "sphinx",
+  "sphinx-autoapi",
+  "sphinx-copybutton",
+  "sphinx-design",
+  "sphinx-favicon>=1.0.1",
+  "sphinx-gallery",
+  "sphinx-sitemap",
+  "sphinx-togglebutton",
+  "sphinxcontrib-bibtex",
+  "sphinxext-opengraph",
+]
 test = [
   "coverage[toml]",
   "pytest-cov",
