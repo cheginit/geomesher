@@ -7,7 +7,7 @@ build:
   tools:
     python: '3.11'
   apt_packages:
-    - libglu1-mesa-dev
+  - libglu1-mesa-dev
 
 python:
   install:
