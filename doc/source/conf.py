@@ -55,14 +55,22 @@ copybutton_prompt_is_regexp = True
 
 # nbsphinx configurations
 nbsphinx_timeout = 600
-nbsphinx_execute = "always"
+nbsphinx_execute = "never"
 nbsphinx_prolog = """
-{% set docname = env.doc2path(env.docname, base=None) %}
+{% set docname = env.doc2path(env.docname, base=None).rsplit("/", 1)[-1] %}
 
-You can run this notebook in a `live session <https://mybinder.org/v2/gh/cheginit/geomesher/doc/examples/main?urlpath=lab/tree/doc/{{ docname }}>`_ |Binder| or view it `on Github <https://github.com/cheginit/geomesher/blob/main/doc/{{ docname }}>`_.
+.. only:: html
 
-.. |Binder| image:: https://mybinder.org/badge.svg
-   :target: https://mybinder.org/v2/gh/cheginit/geomesher/main?urlpath=lab/tree/doc/{{ docname }}
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. nbinfo::
+
+        This page was generated from `{{ docname }}`__.
+        Interactive online version:
+        :raw-html:`<a href="https://mybinder.org/v2/gh/cheginit/geomesher/main?urlpath=lab/tree/doc/source/examples/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+
+    __ https://github.com/cheginit/geomesher/tree/main/doc/source/examples/{{ docname }}
 """
 
 # autoapi configurations
@@ -83,11 +91,9 @@ autoapi_ignore = [
 ]
 autoapi_options = ["members"]
 autoapi_member_order = "groupwise"
-# autoapi_keep_files = True
-# autoapi_add_toctree_entry = False
 modindex_common_prefix = ["geomesher."]
 
-# autodoc_typehints = "none"
+# autodoc configurations
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
 
@@ -152,16 +158,6 @@ napoleon_type_aliases = {
     "pd.NaT": "~pandas.NaT",
 }
 
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
-# The suffix of source filenames.
-# source_suffix = ".rst"
-
-
-# The master toctree document.
-master_doc = "index"
-
 # General information about the project.
 project = "geomesher"
 copyright = f"2023-{datetime.datetime.now().year}, Taher Chegini"
@@ -214,7 +210,22 @@ html_theme_options = {
     "home_page_in_toc": False,
     "icon_links": [],  # workaround for pydata/pydata-sphinx-theme#1220
 }
-
+html_theme_options = {
+    "repository_url": "https://github.com/cheginit/geomesher",
+    "repository_branch": "main",
+    "path_to_docs": "docs",
+    "launch_buttons": {
+        "binderhub_url": "https://mybinder.org/v2/gh/cheginit/geomesher/main?urlpath=lab/tree/doc/source/examples",
+        "notebook_interface": "jupyterlab",
+    },
+    "use_edit_page_button": True,
+    "use_repository_button": True,
+    "use_download_button": False,
+    "use_issues_button": True,
+    "home_page_in_toc": True,
+    # "extra_navbar": "",
+    # "navbar_footer_text": "",
+}
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
@@ -232,13 +243,17 @@ html_static_path = ["_static"]
 html_css_files = ["style.css"]
 
 
-# configuration for sphinxext.opengraph
-ogp_site_url = "https://docs.geomesher.dev/en/latest/"
-ogp_image = "https://docs.geomesher.dev/en/stable/_static/logo.png"
+# configuration for opengraph
+description = "Genrate mesh from geospatial data using Gmsh."
+ogp_site_url = "https://geomesher.readthedocs.io/en/latest"
+ogp_image = "https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/logo.png"
 ogp_custom_meta_tags = [
-    '<meta name="twitter:card" content="summary_large_image" />',
-    '<meta property="twitter:site" content="@xarray_dev" />',
-    '<meta name="image" property="og:image" content="https://geomesher.readthedocs.io/en/stable/_static/logo.png" />',
+    '<meta name="twitter:card" content="summary" />',
+    '<meta name="twitter:site" content="@_taher_" />',
+    '<meta name="twitter:creator" content="@_taher_" />',
+    f'<meta name="twitter:description" content="{description}" />',
+    f'<meta name="twitter:image" content="{ogp_image}" />',
+    f'<meta name="twitter:image:alt" content="{description}" />',
 ]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
