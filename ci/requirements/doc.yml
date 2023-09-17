@@ -27,9 +27,6 @@ dependencies:
 - sphinxcontrib-bibtex
 - sphinxext-opengraph
 - pyyaml
-# example deps
-- matplotlib-base
-- pyogrio
 # installer deps
 - pip
 - setuptools
