@@ -1,5 +1,5 @@
-GeoMesher
-=========
+GeoMesher: Meshing a GeoDataFrame using Gmsh
+============================================
 
 .. image:: https://github.com/cheginit/geomesher/actions/workflows/test.yml/badge.svg
    :target: https://github.com/cheginit/geomesher/actions/workflows/test.yml
@@ -61,13 +61,6 @@ functionalities:
 Note that the remapping functionality of GeoMesher is a simple areal interpolation method.
 For more advanced interpolation methods, please use `Tobler <https://pysal.org/tobler/index.html>`__.
 
-Contributing
-------------
-
-Contributions are very welcomed. Please read
-`CONTRIBUTING.rst <https://github.com/cheginit/pygeoogc/blob/main/CONTRIBUTING.rst>`__
-file for instructions.
-
 Credits
 -------
 
@@ -81,3 +74,7 @@ and uses one of the modules in
     usage
     gallery
     autoapi/index
+    changelog
+    contributing
+    authors
+    license
