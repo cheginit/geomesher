@@ -12,6 +12,7 @@ dependencies:
 - shapely >=2.0
 
 # test deps
+- pyogrio
 - psutil
 - pytest-cov
 - pytest-xdist
