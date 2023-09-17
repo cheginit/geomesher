@@ -14,9 +14,6 @@ import geomesher
 LOGGER = logging.getLogger("conf")
 
 print(f"xarray: {geomesher.__version__}, {geomesher.__file__}")
-version = geomesher.__version__.split("+")[0]
-# The full version, including alpha/beta/rc tags.
-release = geomesher.__version__
 
 nbsphinx_allow_errors = False
 
@@ -158,6 +155,8 @@ html_last_updated_fmt = ""  # to reveal the build date in the pages meta
 
 # Define the json_url for our version switcher.
 json_url = "https://geomesher.readthedocs.io/en/latest/_static/switcher.json"
+
+release = geomesher.__version__
 
 # Define the version we use for matching in the version switcher.
 version_match = os.environ.get("READTHEDOCS_VERSION")
@@ -326,10 +325,10 @@ def linkcode_resolve(domain: str, info: dict[str, str]):
 
     fn = os.path.relpath(fn, start=Path(geomesher.__file__).parent)
 
-    if "+" in version:
+    if "+" in release:
         return f"https://github.com/cheginit/geomesher/blob/main/geomesher/{fn}{linespec}"
 
-    return f"https://github.com/cheginit/geomesher/blob/v{version}/geomesher/{fn}{linespec}"
+    return f"https://github.com/cheginit/geomesher/blob/v{release}/geomesher/{fn}{linespec}"
 
 
 def update_gallery(app: Sphinx):
