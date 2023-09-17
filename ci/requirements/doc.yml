@@ -34,4 +34,4 @@ dependencies:
 - pip
 - setuptools
 - pip:
-    - -e ../..
+  - -e ../..
