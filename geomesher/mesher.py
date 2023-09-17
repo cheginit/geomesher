@@ -22,7 +22,7 @@ from geomesher.common import (
     repr,
     separate,
 )
-from geomesher.exceptions import InputValueError
+from geomesher.exceptions import InputTypeError, InputValueError, MeshingError, MissingColumnsError
 from geomesher.fields import (
     FIELDS,
     add_distance_field,
@@ -125,7 +125,7 @@ class FieldCombination(Enum):
 
 def _to_dict(field: dict[str, Any] | str) -> dict[str, Any]:
     if not isinstance(field, (dict, str)):
-        raise TypeError("field must be a dictionary or a valid JSON dictionary string")
+        raise InputTypeError("field", "dict or a valid JSON string")
     if isinstance(field, str):
         return json.loads(field)
     return field
@@ -277,7 +277,7 @@ class Mesher:
     @recombine_all.setter
     def recombine_all(self, value: bool) -> None:
         if not isinstance(value, bool):
-            raise TypeError("recombine_all must be a bool")
+            raise InputTypeError("recombine_all", "bool")
         self._recombine_all = value
         gmsh.option.setNumber("Mesh.RecombineAll", value)
 
@@ -289,7 +289,7 @@ class Mesher:
     @force_geometry.setter
     def force_geometry(self, value: bool) -> None:
         if not isinstance(value, bool):
-            raise TypeError("force_geometry must be a bool")
+            raise InputTypeError("force_geometry", "bool")
         self._force_geometry = value
 
     @property
@@ -300,7 +300,7 @@ class Mesher:
     @mesh_size_extend_from_boundary.setter
     def mesh_size_extend_from_boundary(self, value: bool) -> None:
         if not isinstance(value, bool):
-            raise TypeError("mesh_size_extend_from_boundary must be a bool")
+            raise InputTypeError("mesh_size_extend_from_boundary", "bool")
         self._mesh_size_extend_from_boundary = value
         gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", value)
 
@@ -312,7 +312,7 @@ class Mesher:
     @mesh_size_from_points.setter
     def mesh_size_from_points(self, value: bool) -> None:
         if not isinstance(value, bool):
-            raise TypeError("mesh_size_from_points must be a bool")
+            raise InputTypeError("mesh_size_from_points", "bool")
         self._mesh_size_from_points = value
         gmsh.option.setNumber("Mesh.MeshSizeFromPoints", value)
 
@@ -328,7 +328,7 @@ class Mesher:
     @mesh_size_from_curvature.setter
     def mesh_size_from_curvature(self, value: bool) -> None:
         if not isinstance(value, bool):
-            raise TypeError("mesh_size_from_curvature must be a bool")
+            raise InputTypeError("mesh_size_from_curvature", "bool")
         self._mesh_size_from_curvature = value
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", value)
 
@@ -407,7 +407,7 @@ class Mesher:
             Minimum cell size.
         """
         if "field" not in gdf.columns:
-            raise ValueError("field column is missing from geodataframe")
+            raise MissingColumnsError(["field"])
 
         for field, field_gdf in gdf.groupby("field"):
             distance_id = self._new_field_id()
@@ -420,9 +420,7 @@ class Mesher:
             try:
                 validate_field(field_dict, spec)
             except KeyError as ex:
-                raise ValueError(
-                    f'invalid field type {fieldtype}. Allowed are: "MathEval", "Threshold".'
-                ) from ex
+                raise InputValueError("fieldtype", ["MathEval", "Threshold"]) from ex
 
             field_gdf = cast("gpd.GeoDataFrame", field_gdf)
             nodes_list = add_field_geometry(field_gdf, minimum_cellsize)
@@ -500,7 +498,7 @@ class Mesher:
         elif _triangle in tags:
             faces = tags[_triangle].reshape((-1, 3))
         else:
-            raise ValueError("No triangles or quads in mesh")
+            raise MeshingError
         # convert to 0-based index
         return faces - 1
 

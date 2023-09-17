@@ -12,9 +12,7 @@ from scipy.sparse import coo_matrix, csr_matrix, diags
 
 from geomesher.exceptions import (
     InputValueError,
-    MatchingCRSError,
     MissingCRSError,
-    ProjectedCRSError,
 )
 
 __all__ = ["area_interpolate"]
@@ -171,27 +169,22 @@ def area_interpolate(
     For categorical variables, the estimate returns ratio of presence of each
     unique category.
     """
-    if not source_df.crs:
-        raise MissingCRSError("source_df")
-
-    if not target_df.crs:
-        raise MissingCRSError("target_df")
-
-    if source_df.crs != target_df.crs:
-        raise MatchingCRSError
-
-    if not source_df.crs.is_projected:
-        raise ProjectedCRSError
-
     source_df = source_df.copy()
     target_df = target_df.copy()
+
+    if source_df.crs != target_df.crs:
+        if target_df.crs is None:
+            raise MissingCRSError("target_df")
+        if source_df.crs is None:
+            raise MissingCRSError("source_df")
+        source_df = source_df.to_crs(target_df.crs)  # pyright: ignore[reportGeneralTypeIssues]
 
     if table is None:
         table = _area_tables_binning(source_df, target_df, spatial_index)
 
     dfs = []
     extensive = []
-    if extensive_variables:
+    if extensive_variables is not None:
         extensive_variables = (
             [extensive_variables] if isinstance(extensive_variables, str) else extensive_variables
         )

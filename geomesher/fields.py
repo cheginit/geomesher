@@ -9,6 +9,7 @@ import gmsh
 import numpy as np
 
 from geomesher.common import FloatArray, IntArray
+from geomesher.exceptions import InputTypeError, InputValueError
 
 
 def write_structured_field_file(
@@ -46,7 +47,7 @@ def write_structured_field_file(
     """
     shape = cellsize.shape
     if cellsize.ndim != 2:
-        raise ValueError(f"`cellsize` must be 2D. Received an array of shape: {shape}")
+        raise InputTypeError("cellsize", "2D np.ndarray")
     nrow, ncol = shape
     # Flip values around if dx or dy is negative.
     if dy < 0.0:
@@ -82,17 +83,14 @@ def validate_field(field: dict[str, Any], spec: list[tuple[str, type]]) -> None:
         if key not in field:
             raise KeyError(f'Key "{key}" is missing for field {fieldtype}')
         if not isinstance(field[key], dtype):
-            raise TypeError(
-                f"Entry {key} must be of type {dtype} for field {fieldtype}, "
-                f"received instead: {type(field[key])}"
-            )
+            raise InputTypeError(key, str(dtype))
 
 
 def add_math_eval_field(field: dict[str, str], distance_id: int, field_id: int) -> None:
     function = field["function"]
     distance = f"F{distance_id}"
-    if f"{distance}" not in function:
-        raise ValueError(f"{distance} not in MathEval field function")
+    if distance not in function:
+        raise InputValueError(distance, function)
     gmsh.model.mesh.field.add("MathEval", field_id)
     gmsh.model.mesh.field.setString(field_id, "F", function.format(distance=distance))
 

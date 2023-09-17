@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING, Any, Sequence, TypeVar, cast
 import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
-from pandas.api.types import is_integer_dtype
 
-from geomesher.exceptions import InputTypeError
+from geomesher.exceptions import GeometryError, InputTypeError, MissingColumnsError
 
 if TYPE_CHECKING:
     from shapely import MultiPolygon, Polygon
@@ -42,18 +41,9 @@ def flatten(seq: Sequence[Any]):
 
 def check_geodataframe(features: gpd.GeoDataFrame) -> None:
     if not isinstance(features, gpd.GeoDataFrame):
-        raise TypeError(f"Expected GeoDataFrame, received instead: {type(features).__name__}")
+        raise InputTypeError("features", "GeoDataFrame")
     if "cellsize" not in features:
-        colnames = list(features.columns)
-        raise ValueError(f'Missing column "cellsize" in columns: {colnames}')
-    if len(features) == 0:
-        raise ValueError("Dataframe is empty")
-    if not is_integer_dtype(features.index):
-        raise ValueError(
-            f"geodataframe index is not integer typed, received: {features.index.dtype}"
-        )
-    if features.index.duplicated().any():
-        raise ValueError("geodataframe index contains duplicates")
+        raise MissingColumnsError(["cellsize"])
 
 
 def overlap_shortlist(features: gpd.GeoSeries) -> tuple[IntArray, IntArray]:
@@ -102,7 +92,7 @@ def check_intersection(features: gpd.GeoSeries, feature_type: str) -> None:
     n_overlap = len(index_a)
     if n_overlap > 0:
         message = "\n".join([f"{a} with {b}" for a, b, in zip(index_a, index_b)])
-        raise ValueError(f"{n_overlap} cases of intersecting {feature_type} detected:\n{message}")
+        raise GeometryError(n_overlap, f"intersecting {feature_type}", message)
 
 
 def check_features(features: gpd.GeoSeries, feature_type: str) -> None:
@@ -118,10 +108,8 @@ def check_features(features: gpd.GeoSeries, feature_type: str) -> None:
     are_simple = features.is_simple
     n_complex = (~are_simple).sum()
     if n_complex > 0:
-        raise ValueError(
-            f"{n_complex} cases of complex {feature_type} detected: these "
-            " features contain self intersections"
-        )
+        message = "These features contain self intersections."
+        raise GeometryError(n_complex, f"complex {feature_type}", message)
 
     if len(features) <= 1:
         return
@@ -248,9 +236,10 @@ def separate(
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
     geom_type = gdf.geom_type
     acceptable = ["Polygon", "LineString", "Point"]
+    gdf = gdf.reset_index(drop=True)  # pyright: ignore[reportGeneralTypeIssues]
     gdf = multi_explode(gdf)
     if not geom_type.isin(acceptable).all():
-        raise TypeError(f"Geometry should be one of {acceptable}")
+        raise InputTypeError("gdf", f"GeoDataFrame with {acceptable} geometries")
 
     polygons = gdf.loc[geom_type == "Polygon"].copy()
     polygons = cast("gpd.GeoDataFrame", polygons)

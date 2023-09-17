@@ -15,22 +15,22 @@ class MissingCRSError(Exception):
         return self.message
 
 
-class ProjectedCRSError(Exception):
-    """Exception raised when CRS is not given."""
+class GeometryError(Exception):
+    """Exception raised when there is an error in the geometry of a GeoDataFrame."""
 
-    def __init__(self) -> None:
-        self.message = "Input dataframes must be in a projected CRS."
+    def __init__(self, n_overlap: int, err_ftype: str, message: str) -> None:
+        self.message = f"{n_overlap} cases of {err_ftype} detected:\n{message}"
         super().__init__(self.message)
 
     def __str__(self) -> str:
         return self.message
 
 
-class MatchingCRSError(Exception):
-    """Exception raised when CRS is not given."""
+class MeshingError(Exception):
+    """Exception raised when there is an error in the meshing process."""
 
     def __init__(self) -> None:
-        self.message = "Input dataframes are in different CRS."
+        self.message = "No triangles or quads in mesh"
         super().__init__(self.message)
 
     def __str__(self) -> str:
@@ -100,7 +100,3 @@ class InputTypeError(TypeError):
 
     def __str__(self) -> str:
         return self.message
-
-
-class InputRangeError(ValueError):
-    """Exception raised when a function argument is not in the valid range."""
