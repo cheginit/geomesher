@@ -1,12 +1,7 @@
 """Sphinx configuration."""
-# Based on xarray's conf.py
-# https://github.com/pydata/xarray/blob/main/doc/conf.py
-
-import datetime
 import inspect
 import os
 import sys
-from contextlib import suppress
 from pathlib import Path
 from textwrap import dedent, indent
 
@@ -18,12 +13,10 @@ import geomesher
 
 LOGGER = logging.getLogger("conf")
 
-print(f"geomesher: {geomesher.__version__}, {geomesher.__file__}")
-
-with suppress(ImportError):
-    import matplotlib
-
-    matplotlib.use("Agg")
+print(f"xarray: {geomesher.__version__}, {geomesher.__file__}")
+version = geomesher.__version__.split("+")[0]
+# The full version, including alpha/beta/rc tags.
+release = geomesher.__version__
 
 nbsphinx_allow_errors = False
 
@@ -41,7 +34,11 @@ extensions = [
     "sphinx.ext.linkcode",
     "sphinxext.opengraph",
     "sphinx_copybutton",
+    "sphinx_togglebutton",
+    "jupyter_sphinx",
     "sphinx_design",
+    "sphinx_favicon",
+    "numpydoc",
 ]
 
 extlinks = {
@@ -93,8 +90,10 @@ autoapi_options = ["members"]
 autoapi_member_order = "groupwise"
 modindex_common_prefix = ["geomesher."]
 
-# autodoc configurations
+# -- Options for autosummary/autodoc output ------------------------------------
+autosummary_generate = True
 autodoc_typehints = "description"
+autodoc_member_order = "groupwise"
 autodoc_typehints_description_target = "documented"
 
 # Napoleon configurations
@@ -113,80 +112,130 @@ napoleon_type_aliases = {
     "path-like": ":term:`path-like <path-like object>`",
     "mapping": ":term:`mapping`",
     "file-like": ":term:`file-like <file-like object>`",
-    # special terms
-    # "same type as caller": "*same type as caller*",  # does not work, yet
-    # "same type as values": "*same type as values*",  # does not work, yet
-    # stdlib type aliases
-    "MutableMapping": "~collections.abc.MutableMapping",
-    "sys.stdout": ":obj:`sys.stdout`",
-    "timedelta": "~datetime.timedelta",
-    "string": ":class:`string <str>`",
-    # numpy terms
-    "array_like": ":term:`array_like`",
-    "array-like": ":term:`array-like <array_like>`",
-    "scalar": ":term:`scalar`",
-    "array": ":term:`array`",
-    "hashable": ":term:`hashable <name>`",
-    # matplotlib terms
-    "color-like": ":py:func:`color-like <matplotlib.colors.is_color_like>`",
-    "matplotlib colormap name": ":doc:`matplotlib colormap name <matplotlib:gallery/color/colormap_reference>`",
-    "matplotlib axes object": ":py:class:`matplotlib axes object <matplotlib.axes.Axes>`",
-    "colormap": ":py:class:`colormap <matplotlib.colors.Colormap>`",
     # objects without namespace: geomesher
-    "DataArray": "~geomesher.DataArray",
-    "Dataset": "~geomesher.Dataset",
-    "Variable": "~geomesher.Variable",
-    "DatasetGroupBy": "~geomesher.core.groupby.DatasetGroupBy",
-    "DataArrayGroupBy": "~geomesher.core.groupby.DataArrayGroupBy",
-    # objects without namespace: numpy
-    "ndarray": "~numpy.ndarray",
-    "MaskedArray": "~numpy.ma.MaskedArray",
-    "dtype": "~numpy.dtype",
-    "ComplexWarning": "~numpy.ComplexWarning",
-    # objects without namespace: pandas
-    "Index": "~pandas.Index",
-    "MultiIndex": "~pandas.MultiIndex",
-    "CategoricalIndex": "~pandas.CategoricalIndex",
-    "TimedeltaIndex": "~pandas.TimedeltaIndex",
-    "DatetimeIndex": "~pandas.DatetimeIndex",
-    "Series": "~pandas.Series",
-    "DataFrame": "~pandas.DataFrame",
-    "Categorical": "~pandas.Categorical",
-    "Path": "~~pathlib.Path",
-    # objects with abbreviated namespace (from pandas)
-    "pd.Index": "~pandas.Index",
-    "pd.NaT": "~pandas.NaT",
+    "MeshAlgorithm": "~geomesher.mesher.MeshAlgorithm",
+    "SubdivisionAlgorithm": "~geomesher.mesher.SubdivisionAlgorithm",
+    "FieldCombination": "~geomesher.mesher.FieldCombination",
 }
 
 # General information about the project.
-project = "geomesher"
-copyright = f"2023-{datetime.datetime.now().year}, Taher Chegini"
-
-# The short X.Y version.
-version = geomesher.__version__.split("+")[0]
-# The full version, including alpha/beta/rc tags.
-release = geomesher.__version__
-
-# There are two options for replacing |today|: either, you set today to some
-# non-false value, then it is used:
-# today = ''
-# Else, today_fmt is used as the format for a strftime call.
+project = "GeoMesher"
+copyright = "2023, Taher Chegini"
 today_fmt = "%Y-%m-%d"
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
+# -- Sitemap -----------------------------------------------------------------
 
+# ReadTheDocs has its own way of generating sitemaps, etc.
+if not os.environ.get("READTHEDOCS"):
+    extensions += ["sphinx_sitemap"]
+
+    html_baseurl = os.environ.get("SITEMAP_URL_BASE", "http://127.0.0.1:8000/")
+    sitemap_locales = [None]
+    sitemap_url_scheme = "{link}"
+
+# -- Internationalization ----------------------------------------------------
+
+# specifying the natural language populates some key tags
+language = "en"
+
+# -- MyST options ------------------------------------------------------------
+
+# This allows us to use ::: to denote directives, useful for admonitions
+myst_enable_extensions = ["colon_fence", "linkify", "substitution"]
+myst_heading_anchors = 2
+myst_substitutions = {"rtd": "[Read the Docs](https://readthedocs.org/)"}
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+# -- Options for HTML output -------------------------------------------------
 
+html_theme = "pydata_sphinx_theme"
+html_logo = "_static/logo.svg"
+html_favicon = "_static/logo.svg"
+html_sourcelink_suffix = ""
+html_last_updated_fmt = ""  # to reveal the build date in the pages meta
 
-# -- Options for HTML output ----------------------------------------------
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-html_theme = "sphinx_book_theme"
-html_title = ""
+# Define the json_url for our version switcher.
+json_url = "https://geomesher.readthedocs.io/en/latest/_static/switcher.json"
+
+# Define the version we use for matching in the version switcher.
+version_match = os.environ.get("READTHEDOCS_VERSION")
+# If READTHEDOCS_VERSION doesn't exist, we're not on RTD
+# If it is an integer, we're in a PR build and the version isn't correct.
+# If it's "latest" → change to "dev" (that's what we want the switcher to call it)
+if not version_match or version_match.isdigit() or version_match == "latest":
+    # For local development, infer the version to match from the package.
+    if "dev" in release or "rc" in release:
+        version_match = "dev"
+        # We want to keep the relative reference if we are in dev mode
+        # but we want the whole url if we are effectively in a released version
+        json_url = "_static/switcher.json"
+    else:
+        version_match = "v" + release
+
+html_theme_options = {
+    "external_links": [
+        {
+            "url": "https://docs.hyriver.io/",
+            "name": "HyRiver",
+        },
+        {
+            "url": "https://deltares.github.io/pandamesh/",
+            "name": "PandaMesh",
+        },
+        {
+            "url": "https://pysal.org/tobler",
+            "name": "Tobler",
+        },
+    ],
+    "header_links_before_dropdown": 4,
+    "icon_links": [
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/_taher_",
+            "icon": "fa-brands fa-twitter",
+        },
+        {
+            "name": "GitHub",
+            "url": "https://github.com/cheginit/geomesher",
+            "icon": "fa-brands fa-github",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/geomesher",
+            "icon": "fa-custom fa-pypi",
+        },
+    ],
+    # alternative way to set twitter and github header icons
+    # "github_url": "https://github.com/pydata/pydata-sphinx-theme",
+    # "twitter_url": "https://twitter.com/PyData",
+    "logo": {
+        "text": "GeoMesher",
+        "image_dark": "_static/logo.svg",
+        "alt_text": "GeoMesher",
+    },
+    "use_edit_page_button": True,
+    "show_toc_level": 1,
+    "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
+    "navbar_center": ["version-switcher", "navbar-nav"],
+    # "announcement": "https://raw.githubusercontent.com/pydata/pydata-sphinx-theme/main/docs/_templates/custom-template.html",
+    "show_version_warning_banner": True,
+    # "show_nav_level": 2,
+    # "navbar_start": ["navbar-logo"],
+    # "navbar_end": ["theme-switcher", "navbar-icon-links"],
+    # "navbar_persistent": ["search-button"],
+    # "primary_sidebar_end": ["custom-template.html", "sidebar-ethical-ads.html"],
+    # "article_footer_items": ["test.html", "test.html"],
+    # "content_footer_items": ["test.html", "test.html"],
+    "footer_start": ["copyright.html"],
+    "footer_center": ["sphinx-version.html"],
+    # "secondary_sidebar_items": ["page-toc.html"],  # Remove the source buttons
+    "switcher": {
+        "json_url": json_url,
+        "version_match": version_match,
+    },
+}
 
 html_context = {
     "github_user": "cheginit",
@@ -195,53 +244,24 @@ html_context = {
     "doc_path": "doc",
 }
 
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-html_theme_options = {
-    # analytics_id=''  this is configured in rtfd.io
-    # canonical_url="",
-    "repository_url": "https://github.com/cheginit/geomesher",
-    "repository_branch": "main",
-    "path_to_docs": "doc",
-    "use_edit_page_button": True,
-    "use_repository_button": True,
-    "use_issues_button": True,
-    "home_page_in_toc": False,
-    "icon_links": [],  # workaround for pydata/pydata-sphinx-theme#1220
-}
-html_theme_options = {
-    "repository_url": "https://github.com/cheginit/geomesher",
-    "repository_branch": "main",
-    "path_to_docs": "docs",
-    "launch_buttons": {
-        "binderhub_url": "https://mybinder.org/v2/gh/cheginit/geomesher/main?urlpath=lab/tree/doc/source/examples",
-        "notebook_interface": "jupyterlab",
-    },
-    "use_edit_page_button": True,
-    "use_repository_button": True,
-    "use_download_button": False,
-    "use_issues_button": True,
-    "home_page_in_toc": True,
-    # "extra_navbar": "",
-    # "navbar_footer_text": "",
-}
-
-# The name of an image file (relative to this directory) to place at the top
-# of the sidebar.
-html_logo = "_static/logo.png"
-
-# The name of an image file (within the static path) to use as favicon of the
-# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
-html_favicon = "_static/favicon.ico"
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ["style.css"]
+html_css_files = ["custom.css"]
+html_js_files = ["custom-icon.js"]
+todo_include_todos = True
 
+# -- favicon options ---------------------------------------------------------
+
+# see https://sphinx-favicon.readthedocs.io for more information about the
+# sphinx-favicon extension
+favicons = [
+    # generic icons compatible with most browsers
+    "favicon-32x32.png",
+    "favicon-16x16.png",
+    {"rel": "shortcut icon", "sizes": "any", "href": "favicon.ico"},
+]
 
 # configuration for opengraph
 description = "Generate mesh from geospatial data using Gmsh."
@@ -255,13 +275,6 @@ ogp_custom_meta_tags = [
     f'<meta name="twitter:image" content="{ogp_image}" />',
     f'<meta name="twitter:image:alt" content="{description}" />',
 ]
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-html_last_updated_fmt = today_fmt
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = "geomesherdoc"
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
@@ -313,21 +326,10 @@ def linkcode_resolve(domain: str, info: dict[str, str]):
 
     fn = os.path.relpath(fn, start=Path(geomesher.__file__).parent)
 
-    if "+" in geomesher.__version__:
+    if "+" in version:
         return f"https://github.com/cheginit/geomesher/blob/main/geomesher/{fn}{linespec}"
 
-    return (
-        "https://github.com/cheginit/geomesher/blob/"
-        f"v{geomesher.__version__}/geomesher/{fn}{linespec}"
-    )
-
-
-def html_page_context(
-    app: Sphinx, pagename: str, templatename: str, context: dict[str, bool], doctree: str
-) -> None:
-    # Disable edit button for docstring generated pages
-    if "generated" in pagename:
-        context["theme_use_edit_page_button"] = False
+    return f"https://github.com/cheginit/geomesher/blob/v{version}/geomesher/{fn}{linespec}"
 
 
 def update_gallery(app: Sphinx):
@@ -338,12 +340,6 @@ def update_gallery(app: Sphinx):
     LOGGER.info("Updating gallery page...")
 
     gallery = yaml.safe_load(Path(app.srcdir, "gallery.yml").read_bytes())
-    # for item in gallery:
-    # thumb = Path(item["thumbnail"])
-    # thumb.parent.mkdir(parents=True, exist_ok=True)
-    # thumb.write_bytes(
-    #     Path(app.srcdir, "examples", "notebooks", "_static", thumb.name).read_bytes()
-    # )
 
     items = [
         f"""
@@ -370,6 +366,41 @@ def update_gallery(app: Sphinx):
     LOGGER.info("Gallery page updated.")
 
 
+def setup_to_main(app: Sphinx, pagename: str, templatename: str, context, doctree) -> None:
+    """Add a function that jinja can access for returning an "edit this page" link pointing to `main`."""
+
+    def to_main(link: str) -> str:
+        """Transform "edit on github" links and make sure they always point to the main branch.
+
+        Args:
+            link: the link to the github edit interface
+
+        Returns
+        -------
+            the link to the tip of the main branch for the same file
+        """
+        links = link.split("/")
+        idx = links.index("edit")
+        return "/".join(links[: idx + 1]) + "/main/" + "/".join(links[idx + 2 :])
+
+    # Disable edit button for docstring generated pages
+    if "generated" in pagename:
+        context["theme_use_edit_page_button"] = False
+    context["to_main"] = to_main
+
+
 def setup(app: Sphinx):
-    app.connect("html-page-context", html_page_context)
+    """Add custom configuration to sphinx app.
+
+    Args:
+        app: the Sphinx application
+    Returns:
+        the 2 parallel parameters set to ``True``.
+    """
+    app.connect("html-page-context", setup_to_main)
     app.connect("builder-inited", update_gallery)
+
+    return {
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
+    }
