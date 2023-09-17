@@ -12,7 +12,6 @@ sphinx-gallery
 sphinxcontrib-bibtex
 sphinxext-opengraph
 pyyaml
-..
 
 # for examples
 matplotlib
