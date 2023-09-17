@@ -49,7 +49,7 @@ test = [
 ]
 [project.urls]
 Code = "https://github.com/deltares/geomesher"
-Home = "https://github.com/deltares/geomesher"
+Home = "https://geomesher.readthedocs.io"
 Issues = "https://github.com/deltares/geomesher/issues"
 
 [tool.setuptools]
