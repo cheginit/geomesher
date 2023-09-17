@@ -244,7 +244,7 @@ html_css_files = ["style.css"]
 
 
 # configuration for opengraph
-description = "Genrate mesh from geospatial data using Gmsh."
+description = "Generate mesh from geospatial data using Gmsh."
 ogp_site_url = "https://geomesher.readthedocs.io/en/latest"
 ogp_image = "https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/logo.png"
 ogp_custom_meta_tags = [
