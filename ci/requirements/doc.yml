@@ -1,0 +1,37 @@
+name: geomesher-docs
+channels:
+- conda-forge
+- nodefaults
+dependencies:
+- python=3.11
+# geomesher deps
+- numpy >=1.21
+- pandas
+- geopandas-base
+- gmsh
+- python-gmsh
+- scipy
+- shapely >=2.0
+# docs deps
+- ipykernel
+- ipython
+- ipywidgets
+- jupyter_client
+- nbsphinx
+- sphinx
+- sphinx-autoapi
+- sphinx-book-theme
+- sphinx-copybutton
+- sphinx-design
+- sphinx-gallery
+- sphinxcontrib-bibtex
+- sphinxext-opengraph
+- pyyaml
+# example deps
+- matplotlib-base
+- pyogrio
+# installer deps
+- pip
+- setuptools
+- pip:
+    - -e ../..
