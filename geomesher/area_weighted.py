@@ -88,9 +88,9 @@ def _area_tables_binning(
 def area_interpolate(
     source_df: gpd.GeoDataFrame,
     target_df: gpd.GeoDataFrame,
-    extensive_variables: str | list[str] | None = None,
-    intensive_variables: str | list[str] | None = None,
-    categorical_variables: str | list[str] | None = None,
+    extensive_variables: list[str] | None = None,
+    intensive_variables: list[str] | None = None,
+    categorical_variables: list[str] | None = None,
     table: csr_matrix | None = None,
     allocate_total: bool = True,
     spatial_index: Literal["source", "target", "auto"] = "auto",
@@ -173,10 +173,8 @@ def area_interpolate(
     target_df = target_df.copy()
 
     if source_df.crs != target_df.crs:
-        if target_df.crs is None:
-            raise MissingCRSError("target_df")
-        if source_df.crs is None:
-            raise MissingCRSError("source_df")
+        if target_df.crs is None or source_df.crs is None:
+            raise MissingCRSError("source_df/target_df")
         source_df = source_df.to_crs(target_df.crs)  # pyright: ignore[reportGeneralTypeIssues]
 
     if table is None:
@@ -185,12 +183,13 @@ def area_interpolate(
     dfs = []
     extensive = []
     if extensive_variables is not None:
-        extensive_variables = (
-            [extensive_variables] if isinstance(extensive_variables, str) else extensive_variables
-        )
-        den = source_df.area.to_numpy("f8")
+        if not isinstance(extensive_variables, (list, tuple)):
+            raise InputValueError("extensive_variables", "list or tuple")
+
         if allocate_total:
             den = np.asarray(table.sum(axis=1), "f8")
+        else:
+            den = source_df.area.to_numpy("f8")
         den = cast("npt.NDArray[np.float64]", den)
         den = den + (den == 0)
         den = 1.0 / den
@@ -207,12 +206,13 @@ def area_interpolate(
 
         extensive = np.asarray(extensive, dtype="f8")
         extensive = pd.DataFrame(extensive.T, columns=extensive_variables)
+        dfs.append(extensive)
 
     intensive = []
-    if intensive_variables:
-        intensive_variables = (
-            [intensive_variables] if isinstance(intensive_variables, str) else intensive_variables
-        )
+    if intensive_variables is not None:
+        if not isinstance(intensive_variables, (list, tuple)):
+            raise InputValueError("intensive_variables", "list or tuple")
+
         area = np.asarray(table.sum(axis=0))
         den = cast("npt.NDArray[np.float64]", 1.0 / (area + (area == 0)))
         n, k = den.shape
@@ -230,14 +230,13 @@ def area_interpolate(
 
         intensive = np.asarray(intensive)
         intensive = pd.DataFrame(intensive.T, columns=intensive_variables)
+        dfs.append(intensive)
 
     categorical = {}
-    if categorical_variables:
-        categorical_variables = (
-            [categorical_variables]
-            if isinstance(categorical_variables, str)
-            else categorical_variables
-        )
+    if categorical_variables is not None:
+        if not isinstance(categorical_variables, (list, tuple)):
+            raise InputValueError("categorical_variables", "list or tuple")
+
         for variable in categorical_variables:
             unique = source_df[variable].unique()
             for value in unique:
@@ -249,15 +248,13 @@ def area_interpolate(
 
         categorical = pd.DataFrame(categorical)
         categorical = categorical.div(target_df.area.to_numpy(), axis=0)
-
-    if extensive_variables:
-        dfs.append(extensive)
-    if intensive_variables:
-        dfs.append(intensive)
-    if categorical_variables:
         dfs.append(categorical)
 
+    if not dfs:
+        raise ValueError(
+            "At least one of the following parameters must be provided: "
+            "extensive_variables, intensive_variables, categorical_variables"
+        )
     df = pd.concat(dfs, axis=1)
     df["geometry"] = target_df[target_df.geometry.name].reset_index(drop=True)
-    df = gpd.GeoDataFrame(df.replace(np.inf, np.nan), index=target_df.index)
-    return df
+    return gpd.GeoDataFrame(df.replace(np.inf, np.nan), index=target_df.index)
