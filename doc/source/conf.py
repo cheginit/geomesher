@@ -1,10 +1,10 @@
+"""Sphinx configuration."""
 # Based on xarray's conf.py
 # https://github.com/pydata/xarray/blob/main/doc/conf.py
 
 import datetime
 import inspect
 import os
-import subprocess
 import sys
 from contextlib import suppress
 from pathlib import Path
@@ -17,18 +17,6 @@ from sphinx.util import logging
 import geomesher
 
 LOGGER = logging.getLogger("conf")
-
-allowed_failures = set()
-
-print("python exec:", sys.executable)
-print("sys.path:", sys.path)
-
-if "CONDA_DEFAULT_ENV" in os.environ or "conda" in sys.executable:
-    print("conda environment:")
-    subprocess.run([os.environ.get("CONDA_EXE", "conda"), "list"])
-else:
-    print("pip environment:")
-    subprocess.run([sys.executable, "-m", "pip", "list"])
 
 print(f"geomesher: {geomesher.__version__}, {geomesher.__file__}")
 
@@ -253,16 +241,6 @@ ogp_custom_meta_tags = [
     '<meta name="image" property="og:image" content="https://geomesher.readthedocs.io/en/stable/_static/logo.png" />',
 ]
 
-# Sometimes the savefig directory doesn't exist and needs to be created
-# https://github.com/ipython/ipython/issues/8733
-# becomes obsolete when we can pin ipython>=5.2; see ci/requirements/doc.yml
-ipython_savefig_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "_build", "html", "_static"
-)
-if not os.path.exists(ipython_savefig_dir):
-    os.makedirs(ipython_savefig_dir)
-
-
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 html_last_updated_fmt = today_fmt
@@ -318,15 +296,15 @@ def linkcode_resolve(domain: str, info: dict[str, str]):
 
     linespec = f"#L{lineno}-L{lineno + len(source) - 1}" if lineno else ""
 
-    fn = os.path.relpath(fn, start=os.path.dirname(geomesher.__file__))
+    fn = os.path.relpath(fn, start=Path(geomesher.__file__).parent)
 
     if "+" in geomesher.__version__:
         return f"https://github.com/cheginit/geomesher/blob/main/geomesher/{fn}{linespec}"
-    else:
-        return (
-            "https://github.com/cheginit/geomesher/blob/"
-            f"v{geomesher.__version__}/geomesher/{fn}{linespec}"
-        )
+
+    return (
+        "https://github.com/cheginit/geomesher/blob/"
+        f"v{geomesher.__version__}/geomesher/{fn}{linespec}"
+    )
 
 
 def html_page_context(
@@ -346,11 +324,11 @@ def update_gallery(app: Sphinx):
 
     gallery = yaml.safe_load(Path(app.srcdir, "gallery.yml").read_bytes())
     # for item in gallery:
-        # thumb = Path(item["thumbnail"])
-        # thumb.parent.mkdir(parents=True, exist_ok=True)
-        # thumb.write_bytes(
-        #     Path(app.srcdir, "examples", "notebooks", "_static", thumb.name).read_bytes()
-        # )
+    # thumb = Path(item["thumbnail"])
+    # thumb.parent.mkdir(parents=True, exist_ok=True)
+    # thumb.write_bytes(
+    #     Path(app.srcdir, "examples", "notebooks", "_static", thumb.name).read_bytes()
+    # )
 
     items = [
         f"""
