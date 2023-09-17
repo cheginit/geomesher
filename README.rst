@@ -3,8 +3,8 @@
 
 |
 
-GeoMesher
-=========
+GeoMesher: Meshing a GeoDataFrame using Gmsh
+============================================
 
 .. image:: https://github.com/cheginit/geomesher/actions/workflows/test.yml/badge.svg
    :target: https://github.com/cheginit/geomesher/actions/workflows/test.yml
@@ -112,9 +112,9 @@ from the source GeoDataFrame to the generated mesh.
 
     mesh_auto = gm.gdf_mesher(south_america, intensive_variables=["POP_EST"])
 
-    mesher = gm.GmshMesher(south_america)
+    mesher = gm.Mesher(south_america)
     mesher.mesh_algorithm = "MESH_ADAPT"
-    mesh_adapt = mesher.generate_gdf()
+    mesh_adapt = mesher.generate()
     mesh_adapt = gm.area_interpolate(south_america, mesh_adapt, intensive_variables=["POP_EST"])
 
 .. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/demo.png
