@@ -159,6 +159,3 @@ def test_add_geometry():
     points_gdf["cellsize"] = 0.25
     with gmsh_env():
         gg.add_geometry(polygons, line_gdf, points_gdf)
-
-
-# TODO: add tests for fields functionality
