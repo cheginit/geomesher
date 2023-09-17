@@ -85,7 +85,7 @@ Quick start
 -----------
 
 The following example shows how to generate a mesh from a GeoDataFrame
-using both the ``gdf_mesher`` function and the ``GmshMesher`` class.
+using both the ``gdf_mesher`` function and the ``Mesher`` class.
 
 We start by getting a GeoDataFrame of South America from the Natural Earth website.
 Then, we reproject it to a projected coordinate system (UTM zone 20S).
@@ -93,7 +93,7 @@ Finally, we add a new column called ``cellsize`` that will be used to set the
 maximum size of the mesh elements.
 
 We use the ``gdf_mesher`` function to generate the mesh with default parameters
-and use ``GmshMesher`` to generate the mesh with ``MESH_ADAPT`` algorithm.
+and use ``Mesher`` to generate the mesh with ``MESH_ADAPT`` algorithm.
 We also use the ``area_interpolate`` function to remap the ``POP_EST`` column
 from the source GeoDataFrame to the generated mesh.
 

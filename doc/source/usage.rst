@@ -20,7 +20,7 @@ Quick start
 -----------
 
 The following example shows how to generate a mesh from a GeoDataFrame
-using both the ``gdf_mesher`` function and the ``GmshMesher`` class.
+using both the ``gdf_mesher`` function and the ``Mesher`` class.
 
 We start by getting a GeoDataFrame of South America from the Natural Earth website.
 Then, we reproject it to a projected coordinate system (UTM zone 20S).
@@ -28,7 +28,7 @@ Finally, we add a new column called ``cellsize`` that will be used to set the
 maximum size of the mesh elements.
 
 We use the ``gdf_mesher`` function to generate the mesh with default parameters
-and use ``GmshMesher`` to generate the mesh with ``MESH_ADAPT`` algorithm.
+and use ``Mesher`` to generate the mesh with ``MESH_ADAPT`` algorithm.
 We also use the ``area_interpolate`` function to remap the ``POP_EST`` column
 from the source GeoDataFrame to the generated mesh.
 
@@ -47,9 +47,9 @@ from the source GeoDataFrame to the generated mesh.
 
     mesh_auto = gm.gdf_mesher(south_america, intensive_variables=["POP_EST"])
 
-    mesher = gm.GmshMesher(south_america)
+    mesher = gm.Mesher(south_america)
     mesher.mesh_algorithm = "MESH_ADAPT"
-    mesh_adapt = mesher.generate_gdf()
+    mesh_adapt = mesher.generate()
     mesh_adapt = gm.area_interpolate(south_america, mesh_adapt, intensive_variables=["POP_EST"])
 
 .. image:: https://raw.githubusercontent.com/cheginit/geomesher/main/doc/source/_static/demo.png
