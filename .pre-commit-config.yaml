@@ -28,6 +28,7 @@ repos:
   hooks:
   - id: black
     name: Autoformat with black
+    additional_dependencies: [ipython, tokenize-rt]
 
 - repo: https://github.com/asottile/blacken-docs
   rev: 1.16.0
@@ -106,3 +107,18 @@ repos:
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --indent, '2']
+
+- repo: https://github.com/nbQA-dev/nbQA
+  rev: 1.7.0
+  hooks:
+  - id: nbqa-isort
+    name: Format notebooks; sort imports by isort
+    files: doc/source/examples
+
+  - id: nbqa-black
+    name: Format notebooks; reformat by black
+    files: doc/source/examples
+
+  - id: nbqa-pyupgrade
+    files: doc/source/examples
+    name: Format notebooks; upgrade syntax to Python 3.8+ by pyupgrade
